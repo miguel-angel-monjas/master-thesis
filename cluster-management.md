@@ -112,7 +112,7 @@ ssh-copy-id -i ~/.ssh/idhdfs_rsa.pub hdfs-slave-1
 ssh-copy-id -i ~/.ssh/idhdfs_rsa.pub hdfs-slave-2
 ```
 
-Finally, we delete the `inlab` private key and rename the newly-created pair of keys so that the default file names are used:
+Finally, we delete the `inlab` private key (`id_rsa`) and rename the newly-created pair of keys so that the default file names are used:
 ```bash
 rm ~/.ssh/id_rsa
 mv ~/.ssh/idhdfs_rsa ~/.ssh/id_rsa
@@ -162,7 +162,7 @@ sudo nano $HADOOP_HOME/etc/hadoop/mapred-site.xml
     <description>The framework for running mapreduce jobs</description>
   </property>
 </configuration>
-xml
+```
 
 ### `hdfs-site.xml`
 `hdfs-site.xml` must be updated on master and slave nodes in order to activate the properties `dfs.replication`, `dfs.namenode.name.dir`, and `dfs.datanode.name.dir`. It also sets several properties to enable the instances to listen on all interfaces (otherwise, the instances will not be able to connect to each other). See the [official guidelines for HDFS multihoming environments](https://hadoop.apache.org/docs/r2.8.0/hadoop-project-dist/hadoop-hdfs/HdfsMultihoming.html#Ensuring_HDFS_Daemons_Bind_All_Interfaces). Default values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml):
@@ -262,7 +262,8 @@ mkdir -p /home/ubuntu/hdfs/datanode
 * Set `yarn.nodemanager.aux-services`. 
 * Enable all interfaces are listened to. Otherwise, connection between nodes will not be possible.
 * Dimension the YARN cluster.
-Default values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-common/yarn-default.xml)
+
+Default values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-common/yarn-default.xml).
 
 ```bash
 sudo nano $HADOOP_HOME/etc/hadoop/yarn-site.xml
@@ -308,14 +309,15 @@ sudo nano $HADOOP_HOME/etc/hadoop/yarn-site.xml
   <property>
     <name>yarn.nodemanager.resource.cpu-vcores</name>
     <value>28</value>
-  </property> </configuration>
+  </property>
+</configuration>
 ```
 
 It is important to note that specific values must be set for the properties `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`. 
 * `yarn.nodemanager.resource.memory-mb`. It is the amount of physical memory, in MB, that can be allocated for containers. As our instances’ RAM is 32GB, we can consider that about 8GB are used by the operating system and other tasks, 1GB each for the HDFS *DataNode* and the YARN *NodeManager*, so that 22GB can be a good fit (the master instance should consider also the HDFS *NameNode* and the YARN *ResourceManager* and provide about 20 GB instead). Default value is 8192.
 * `yarn.nodemanager.resource.cpu-vcores`. It is the number of vcores that can be allocated for containers. As our instances have 32 vCPU's, and considering that the operating system uses one of them and one each for the HDFS *DataNode* and the YARN *NodeManager*, 29 seems to be a good choice (27 is used in the master). Default value is 8.
 
-Although not followed, (the official Cloudera documentation on YARN tuning)[https://www.cloudera.com/documentation/enterprise/5-3-x/topics/cdh_ig_yarn_tuning.html] can provide an overview of the optimization of YARN clusters. In fact, if proper values of the properties above are not set, *NodeManagers* will not be authorized to register and the cluster will not be deployed.
+Although not followed, [the official Cloudera documentation on YARN tuning](https://www.cloudera.com/documentation/enterprise/5-3-x/topics/cdh_ig_yarn_tuning.html) can provide an overview of the optimization of YARN clusters. In fact, if proper values of the properties above are not set, *NodeManagers* will not be authorized to register and the cluster will not be deployed.
 
 ### `slaves`
 Finally, the `slaves` file is updated, only on the master node:
