@@ -1,13 +1,16 @@
 # Creation of a Hadoop cluster   
+This document is based on [the official Hadoop documentation](https://hadoop.apache.org/docs/r2.7.2/hadoop-project-dist/hadoop-common/ClusterSetup.html) and [other resources found on the Internet](https://chawlasumit.wordpress.com/2015/03/09/install-a-multi-node-hadoop-cluster-on-ubuntu-14-04/). It is important to note that as new releases are available, some properties become deprecated and old tutorials are no longer valid (see the [list of deprecated properties](https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/DeprecatedProperties.html)).
 
-# Instance creation
+## Instance creation
 We create three instances in the OpenStack cloud: we’ll name them `hdfs-master`, `hdfs-slave-1` and `hdfs-slave-2`. The flavor used has the following features:
 * **Memory**: 32 GB
 * **vCPU**: 32
 
 The image used is Ubuntu 16.06. All of them are provided a floating IP address (in our environment: `10.65.104.210`, `10.65.104.175`, and `10.65.104.176`).
 
-## Install Java on all instances  
+## Install Java on all instances
+We plan to install Oracle Java 8 and follow some tutorial found on the Internet ([here](http://tecadmin.net/install-oracle-java-8-jdk-8-ubuntu-via-ppa/) and [here](http://stackoverflow.com/questions/19275856/auto-yes-to-the-license-agreement-on-sudo-apt-get-y-install-oracle-java7-instal)):
+
 ```bash
 sudo apt-get update
 echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
@@ -19,7 +22,7 @@ sudo apt-get install -y oracle-java8-set-default
 ```
 
 ## Install Hadoop on all the instances
-We choose Hadoop 2.7.4.
+We choose [Hadoop 2.7.4](http://hadoop.apache.org/docs/r2.7.4/).
 ```bash
 wget http://ftp.cixug.es/apache/hadoop/common/hadoop-2.7.4/hadoop-2.7.4.tar.gz
 tar -xvzf hadoop-2.7.4.tar.gz
@@ -28,12 +31,12 @@ rm hadoop-2.7.4.tar.gz
 ```
 
 ## Setup Hadoop environment variables on master and slave nodes
-In order to determine Java home, we use the following command:
+In order to determine the actual Java home, we use the following command:
 ```bash
 readlink -f /usr/bin/java | sed "s:bin/java::"
 ```
 
-Next, we set the variables in the .bashrc file under /home/ubuntu. Do it on master and slave nodes:
+Next, we set the variables in the `.bashrc` file under `/home/ubuntu`. Do it on master and slave nodes:
 ```bash
 sudo nano ~/.bashrc
 ```
@@ -46,12 +49,12 @@ export JAVA_HOME=/usr/lib/jvm/java-8-oracle/jre
 export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
 ```
 
-Reload the .bashrc file:
+Reload the `.bashrc` file:
 ```bash
 source ~/.bashrc
 ```
 
-Finally, we update the $JAVA_HOME variable in the hadoop_env.sh configuration file on master and slave nodes:
+Finally, we update the `$JAVA_HOME` variable in the `hadoop_env.sh` configuration file on master and slave nodes:
 ```bash
 sudo nano $HADOOP_HOME/etc/hadoop/hadoop-env.sh
 ```
@@ -68,17 +71,7 @@ sudo apt-get install rsync -y
 ```
 
 ## Update /etc/hosts in all instances
-In the master:
-```bash
-sudo nano /etc/hosts
-```
-```bash
-10.65.104.210   hdfs-master
-10.65.104.175   hdfs-slave-1
-10.65.104.176   hdfs-slave-2
-```
 
-In the slaves:
 ```bash
 sudo nano /etc/hosts
 ```
@@ -89,54 +82,54 @@ sudo nano /etc/hosts
 ```
 
 ## Enable password-less ssh
-Enabling password-less ssh connection between the instances can be tricky, as connections to the instances in the OpenStack cloud cannot be done but using password-less ssh with the private key used to deploy the instance s(inlab). That is, any instance in our OpenStack cloud already accepts ssh connections from clients with the inlab private key. Thus, making the private key available in the master note would be enough (if unsure about security, mind that any user able to connect to any OpenStack instance already have the private key).
+Enabling password-less ssh connection between the instances can be tricky, as connections to the instances in the OpenStack cloud cannot be done but using password-less ssh with the private key used to deploy the instances (named `inlab`). That is, any instance in our OpenStack cloud already accepts ssh connections from clients with the inlab private key. Thus, making the private key available in the master note would be enough (if unsure about security, mind that any user able to connect to any OpenStack instance already have the private key).
 
-Thus, the simplest way to enable the ssh connection is simply to copy the inlab key (with OpenSSH format) to the /home/ubuntu/.ssh folder in the master node (using a secure FTP client). As we are using PuTTY to handle connections (we use a Windows box), a private key with proper OpenSSH format must be obtained from inlab.ppk. It can be done by means of PuTTYgen, by loading the private key and exporting it as an OpenSSH key. The resulting private key will be named id_rsa and subsequently uploaded to the master instance.
+Thus, the simplest way to enable the ssh connection is simply to copy the inlab key (with OpenSSH format) to the `/home/ubuntu/.ssh` folder in the master node (using a secure FTP client). As we are using PuTTY to handle connections (we use a Windows box), a private key with proper OpenSSH format must be obtained from `inlab.ppk`. It can be done by means of PuTTYgen, by loading the private key and exporting it as an OpenSSH key. The resulting private key will be named `id_rsa` and subsequently uploaded to the master instance.
 
 Once in the proper file, the file must be given the right permissions:
 ```bash
 chmod 0600 ~/.ssh/id_rsa
 ```
 
-Finally, the connection can be tested by using the following command (StrictHostKeyChecking=no used to avoid an interactive dialogue in the first connection):
+Finally, the connection can be tested by using the following command (`StrictHostKeyChecking=no` can be used to avoid an interactive dialogue in the first connection):
 ```bash
 ssh -o StrictHostKeyChecking=no hdfs-slave-1
 ssh -o StrictHostKeyChecking=no hdfs-slave-2
 ```
 
-If we do not want to leave the private key in the master instance, we can try an alternative schema, using the private key just to get access to the slave instances and removing it afterwards. First, we follow the procedures to handle the inlab private key in the master instance described previously (upload and permissions set). The result will be having a private key with proper permissions in ~/.ssh/id_rsa.
+If we do not want to leave the private key in the master instance, we can try an alternative schema, using the private key just to get access to the slave instances and removing it afterwards. First, we follow the procedures to handle the inlab private key in the master instance described previously (upload and permissions set). The result will be having a private key with proper permissions in `~/.ssh/id_rsa`.
 
-Next, we need to create a new pair of public/private keys (mind the key names) that will be subsequently used to communications between the master and the slaves:
+Next, we need to create a new pair of public/private keys (mind the key names in order not to overwrite the existing key) that will be subsequently used to communications between the master and the slaves:
 ```bash
 ssh-keygen -t rsa -P '' -f ~/.ssh/idhdfs_rsa
 cat ~/.ssh/idhdfs_rsa.pub >> ~/.ssh/authorized_keys
 chmod 0600 ~/.ssh/authorized_keys
 ```
 
-Once created, we need to upload the public key to the slaves by means of ssh-copy-id. 
+Once created, we need to upload the public key to the slaves by means of `ssh-copy-id`. 
 ```bash
 ssh-copy-id -i ~/.ssh/idhdfs_rsa.pub hdfs-slave-1
 ssh-copy-id -i ~/.ssh/idhdfs_rsa.pub hdfs-slave-2
 ```
 
-Finally, we delete the inlab private key and rename the newly-created pair of keys so that the default file names are used:
+Finally, we delete the `inlab` private key and rename the newly-created pair of keys so that the default file names are used:
 ```bash
 rm ~/.ssh/id_rsa
 mv ~/.ssh/idhdfs_rsa ~/.ssh/id_rsa
 mv ~/.ssh/idhdfs_rsa.pub ~/.ssh/id_rsa.pub
 ```
 
-Verify that seamless ssh connection is enabled by using the command written down in the previous options:
+Verify that seamless ssh connection is enabled by using the commands suggested in the previous alternative:
 ```bash
 ssh -o StrictHostKeyChecking=no hdfs-slave-1
 ssh -o StrictHostKeyChecking=no hdfs-slave-2
 ```
 
-## Configure the instances
-Five configuration files have to be updated (or created) on master and slave instances in order to have our cluster configured: core-site.xml, mapred-site.xml, hdfs-site.xml, yarn-site.xml, and slaves. (mind that some variables have been deprecated as new versions of Hadoop are releases, be aware of that).
+## Configure the cluster instances
+Five configuration files have to be updated (or created) on master and slave instances in order to have our cluster configured: `core-site.xml`, `mapred-site.xml`, `hdfs-site.xml`, `yarn-site.xml`, and `slaves` (mind that some variables have been deprecated as new versions of Hadoop are releases, be aware of that).
 
-### core-site.xml
-First, core-site.xml must be updated on all instances (master and slaves), in order to set the properties hadoop.tmp.dir and fs.defaultFS:
+### `core-site.xml`
+First, `core-site.xml` must be updated on all instances (master and slaves), in order to set the properties `hadoop.tmp.dir` and `fs.defaultFS`:
 ```bash
 sudo nano $HADOOP_HOME/etc/hadoop/core-site.xml
 ```
@@ -155,8 +148,8 @@ sudo nano $HADOOP_HOME/etc/hadoop/core-site.xml
 </configuration>
 ```
 
-### mapred-site.xml
-Next, mapred-site.xml must be activated on the master node in order to activate mapreduce.framework.name:
+### `mapred-site.xml`
+Next, `mapred-site.xml` must be activated on the master node in order to activate `mapreduce.framework.name`. Default values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml):
 ```bash
 cp $HADOOP_HOME/etc/hadoop/mapred-site.xml.template $HADOOP_HOME/etc/hadoop/mapred-site.xml
 sudo nano $HADOOP_HOME/etc/hadoop/mapred-site.xml
@@ -171,8 +164,8 @@ sudo nano $HADOOP_HOME/etc/hadoop/mapred-site.xml
 </configuration>
 xml
 
-### hdfs-site.xml
-hdfs-site.xml must be updated on master and slave nodes in order to activate the properties dfs.replication, dfs.namenode.name.dir, and dfs.datanode.name.dir. It also sets several properties to enable the instances to listen on all interfaces. 
+### `hdfs-site.xml`
+`hdfs-site.xml` must be updated on master and slave nodes in order to activate the properties `dfs.replication`, `dfs.namenode.name.dir`, and `dfs.datanode.name.dir`. It also sets several properties to enable the instances to listen on all interfaces (otherwise, the instances will not be able to connect to each other). See the [official guidelines for HDFS multihoming environments](https://hadoop.apache.org/docs/r2.8.0/hadoop-project-dist/hadoop-hdfs/HdfsMultihoming.html#Ensuring_HDFS_Daemons_Bind_All_Interfaces). Default values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml):
 ```bash
 sudo nano $HADOOP_HOME/etc/hadoop/hdfs-site.xml
 ```
@@ -254,20 +247,23 @@ sudo nano $HADOOP_HOME/etc/hadoop/hdfs-site.xml
 ```
 
 Some remarks about the variables:
-* dfs.replication: it specifies the default block replication. It defines how many machines a single file should be replicated to before it becomes available. If the variable value is set to a value higher than the number of available slaves (actually DataNodes), there will errors. The default value is 3. As we have only two slaves, we set dfs.replication to 2.
-* dfs.namenode.name.dir: Directory is used by the NameNode to store its metadata file. Thus, manual creation of the directory om all nodes is required.
-* dfs.datanode.name.dir: Directory is used by DataNodes to store its metadata file. Thus, manual creation of the directory om all nodes is required.
+* `dfs.replication`: it specifies the default block replication. It defines how many machines a single file should be replicated to before it becomes available. If the variable value is set to a value higher than the number of available slaves (actually *DataNodes*), there will errors. The default value is 3. As we have only two slaves, we set `dfs.replication` to 2.
+* `dfs.namenode.name.dir`: Directory is used by the *NameNode* to store its metadata file. Thus, manual creation of the directory on all nodes is required.
+* `dfs.datanode.name.dir`: Directory is used by *DataNodes* to store its metadata file. Thus, manual creation of the directory om all nodes is required.
+
 ```bash
 mkdir -p /home/ubuntu/hdfs/namenode
 mkdir -p /home/ubuntu/hdfs/datanode
 ```
 
-### yarn-site.xml
-yarn-site.xml must be updated on master and slave nodes in order to:
-•	Activate properties related to the ResourceManager ports.
-•	Set yarn.nodemanager.aux-services. 
-•	Enable all interfaces are listened to.
-•	Dimension the YARN cluster.
+### `yarn-site.xml`
+`yarn-site.xm`l must be updated on master and slave nodes in order to:
+* Activate properties related to the *ResourceManager* ports so that the different entities connect properly to each other.
+* Set `yarn.nodemanager.aux-services`. 
+* Enable all interfaces are listened to. Otherwise, connection between nodes will not be possible.
+* Dimension the YARN cluster.
+Default values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-common/yarn-default.xml)
+
 ```bash
 sudo nano $HADOOP_HOME/etc/hadoop/yarn-site.xml
 ```
@@ -315,12 +311,14 @@ sudo nano $HADOOP_HOME/etc/hadoop/yarn-site.xml
   </property> </configuration>
 ```
 
-It is important to note that specific values must be set for the properties yarn.nodemanager.resource.memory-mb and yarn.nodemanager.resource.cpu-vcores. 
-* yarn.nodemanager.resource.memory-mb. It is the amount of physical memory, in MB, that can be allocated for containers. As our instances’ RAM is 32GB, we can consider that about 8GB are used by the operating system and other tasks, 1GB each for the HDFS DataNode and the YARN NodeManager, so that 22GB can be a good fit (the master instance should consider also the HDFS NameNode and the YARN ResourceManager and provide about 20 GB instead). Default value is 8192.
-* yarn.nodemanager.resource.cpu-vcores. It is the number of vcores that can be allocated for containers. As our instances have 32 vCPU’s, and considering that the operating system uses one of them and one each for the HDFS DataNode and the YARN NodeManager, 29 seems to be a good choice (27 is used in the master). Default value is 8.
+It is important to note that specific values must be set for the properties `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`. 
+* `yarn.nodemanager.resource.memory-mb`. It is the amount of physical memory, in MB, that can be allocated for containers. As our instances’ RAM is 32GB, we can consider that about 8GB are used by the operating system and other tasks, 1GB each for the HDFS *DataNode* and the YARN *NodeManager*, so that 22GB can be a good fit (the master instance should consider also the HDFS *NameNode* and the YARN *ResourceManager* and provide about 20 GB instead). Default value is 8192.
+* `yarn.nodemanager.resource.cpu-vcores`. It is the number of vcores that can be allocated for containers. As our instances have 32 vCPU's, and considering that the operating system uses one of them and one each for the HDFS *DataNode* and the YARN *NodeManager*, 29 seems to be a good choice (27 is used in the master). Default value is 8.
 
-### slaves
-Finally, the slaves files is updated, only on the master node:
+Although not followed, (the official Cloudera documentation on YARN tuning)[https://www.cloudera.com/documentation/enterprise/5-3-x/topics/cdh_ig_yarn_tuning.html] can provide an overview of the optimization of YARN clusters. In fact, if proper values of the properties above are not set, *NodeManagers* will not be authorized to register and the cluster will not be deployed.
+
+### `slaves`
+Finally, the `slaves` file is updated, only on the master node:
 ```bash
 sudo nano $HADOOP_HOME/etc/hadoop/slaves
 ```
@@ -330,8 +328,8 @@ hsdf-slave-1
 hdsf-slave-2
 ```
 
-## Format the HDFS filesystem via the NameNode
-(mind that you format again the filesystem in some time in the future, there will be errors related to inconsistent clusterID; datanodes on slave instances will keep the reference to the old namenode and thus you will need to delete and recreate data folders)
+## Format the HDFS filesystem via the *NameNode*
+(mind that you format again the filesystem in some time in the future, there will be errors related to inconsistent clusterID; *DataNodes* on slave instances will keep the reference to the old *NameNode* and thus you will need to delete and recreate data folders)
 ```bash
 $HADOOP_HOME/bin/hdfs namenode -format
 ```
@@ -342,12 +340,11 @@ Although it is possible to start all daemons at once, it is better to run separa
 $HADOOP_HOME/sbin/start-dfs.sh
 ```
 
-To validate it has started successfully, you must run jps on the master and slave instances:
+To validate it has started successfully, you must run `jps` on the master and slave instances:
 ```bash
 jps
 ```
-
-The output should list NameNode, SecondaryNameNode, and DataNode on the master node:
+The output should list `NameNode`, `SecondaryNameNode`, and` DataNode` on the master node:
 ```bash
 17089 DataNode
 16947 NameNode
@@ -355,9 +352,9 @@ The output should list NameNode, SecondaryNameNode, and DataNode on the master n
 17470 Jps
 ```
 
-And a DataNode in each slave instance.
+And a `DataNode` in each slave instance.
 
-If you do not get this output in all the instances of the cluster, you need to analyze the log files available at $HADOOP_HOME/logs. Relevant log files are hadoop-ubuntu-datanode-hdfs-master.log, hadoop-ubuntu-namenode-hdfs-master.log, and hadoop-ubuntu-secondarynamenode-hdfs-master.log.
+If you do not get this output in all the instances of the cluster, you need to analyze the log files available at `$HADOOP_HOME/logs`. Relevant log files are `hadoop-ubuntu-datanode-hdfs-master.log`, `hadoop-ubuntu-namenode-hdfs-master.log`, and `hadoop-ubuntu-secondarynamenode-hdfs-master.log`.
 
 The status of the HDFS cluster can be verified in http://hdfs-master:50070/
 
@@ -371,7 +368,7 @@ $HADOOP_HOME/sbin/stop-dfs.sh
 $HADOOP_HOME/sbin/start-yarn.sh
 ```
 
-The output of jps should list NodeManager and ResourceManager on the master node:
+The output of jps should list `NodeManager` and `ResourceManager` on the master node:
 ```bash
 17089 DataNode
 16947 NameNode
@@ -381,7 +378,7 @@ The output of jps should list NodeManager and ResourceManager on the master node
 17324 SecondaryNameNode
 ```
 
-And NodeManager on each slave nodes.
+And `NodeManager` on each slave nodes.
 ```bash
 8006 NodeManager
 6507 DataNode
@@ -389,9 +386,16 @@ And NodeManager on each slave nodes.
 ```
 
 The status of the YARN cluster can be verified in http://hdfs-master:8088/
+
 To stop the YARN cluster simply type:
 ```bash
 $HADOOP_HOME/sbin/stop-yarn.sh
 ```
 
-It is possible to start (and stop) both the DFS and the YARN daemons, by using $HADOOP_HOME/sbin/start-all.sh and $HADOOP_HOME/sbin/stop-all.sh but a warning states that they are deprecated.
+It is possible to start (and stop) both the DFS and the YARN daemons, by using `$HADOOP_HOME/sbin/start-all.sh` and `$HADOOP_HOME/sbin/stop-all.sh` but a warning states that they are deprecated.
+
+# Key take-aways
+We have found several issues when setting up the cluster. If you have a similar environment to the one described here, you shouldn't have any problem following the instructions. However, it is important to focus on the main stoppers we have found:
+*  password-less ssh is easy to implement provided that you can copy the keys to all the cluster instances. As we are deploying it in an OpenStack cloud that follows exactly the same principle, uploading a suitable key to the slaves can be tricky. We recommend the second alternative described above as it exposes the master key just for a while.
+* when only one network interface is in place, you don't have to worry about listening to several interfaces. However, OpenStack creates several interfaces and therefore if you wish to enable binding from any interface, related properties have to be set to 0.0.0.0 (all addresses on the local machine).
+* you have to carefully dimension the cluster. If you use small flavors, *NodeManagers* will not be able to gather enough resources and will be rejected at registration. Thus, you need to use instances with a certain amount of memory and properly configure `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`.
