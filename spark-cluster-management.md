@@ -27,8 +27,21 @@ Reload the `.bashrc` file:
 source ~/.bashrc
 ```
 
-Finally, activate and set some variables in the `spark-env.sh` configuration file on master and slave nodes:
+Next, activate and set some variables in the `spark-env.sh` configuration file on master and slave nodes:
 ```bash
 cp $SPARK_HOME/conf/spark-env.sh.template $SPARK_HOME/conf/spark-env.sh
-nano $SPARK_HOME/conf/spark-env.sh
+echo '
+export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export SPARK_MASTER_IP=10.65.104.210
+' >> $SPARK_HOME/conf/spark-env.sh
+```
+
+Finally, the Spark `slaves` file is updated, only on the master node:
+```bash
+echo "
+hdfs-master
+hsdf-slave-1
+hdsf-slave-2
+" >> $SPARK_HOME/conf/slaves
 ```
