@@ -124,7 +124,7 @@ ssh -o StrictHostKeyChecking=no hdfs-slave-2
 ```
 
 ## Configure the cluster instances
-Five configuration files have to be updated (or created) on master and slave instances in order to have our cluster configured: `core-site.xml`, `mapred-site.xml`, `hdfs-site.xml`, `yarn-site.xml`, and `slaves` (mind that some variables have been deprecated as new versions of Hadoop are releases, be aware of that). They are available in the directory `$HADOOP_HOME/etc/hadoop`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
+Three configuration files have to be updated (or created) on master and slave instances in order to have our cluster configured: `core-site.xml`, `hdfs-site.xml`, and `slaves` (mind that some variables have been deprecated as new versions of Hadoop are releases, be aware of that). They are available in the directory `$HADOOP_HOME/etc/hadoop`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
 
 ### `core-site.xml`
 First, `core-site.xml` must be updated on all instances (master and slaves), in order to set the properties `hadoop.tmp.dir` and `fs.defaultFS`:
@@ -142,22 +142,6 @@ nano $HADOOP_HOME/etc/hadoop/core-site.xml
     <name>fs.defaultFS</name>
      <value>hdfs://hdfs-master:9000</value>
     <description>Use HDFS as file storage engine</description>
-  </property>
-</configuration>
-```
-
-### `mapred-site.xml`
-Next, `mapred-site.xml` must be activated on the master node in order to activate `mapreduce.framework.name`. Default values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml):
-```bash
-cp $HADOOP_HOME/etc/hadoop/mapred-site.xml.template $HADOOP_HOME/etc/hadoop/mapred-site.xml
-nano $HADOOP_HOME/etc/hadoop/mapred-site.xml
-```
-```xml
-<configuration>
-  <property>
-    <name>mapreduce.framework.name</name>
-    <value>yarn</value>
-    <description>The framework for running mapreduce jobs</description>
   </property>
 </configuration>
 ```
@@ -254,73 +238,6 @@ mkdir -p /home/ubuntu/hdfs/namenode
 mkdir -p /home/ubuntu/hdfs/datanode
 ```
 
-### `yarn-site.xml`
-`yarn-site.xml` is the responsible of YARN cluster configuration and must be updated on master and slave nodes in order to:
-* Activate properties related to the *ResourceManager* ports so that the different entities connect properly to each other.
-* Set `yarn.nodemanager.aux-services`. 
-* Enable all interfaces are listened to. Otherwise, connection between nodes will not be possible.
-* Dimension the YARN cluster.
-
-The YARN *ResourceManager* implements three different schedulers. At the moment, we will leave the default option (Capacity Scheduler, configured via `yarn.resourcemanager.scheduler.class`).
-
-Default values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-common/yarn-default.xml).
-
-The YARN 
-
-```bash
-nano $HADOOP_HOME/etc/hadoop/yarn-site.xml
-```
-```xml
-<configuration>
-  <property>
-    <name>yarn.resourcemanager.scheduler.address</name>
-    <value>hdfs-master:8030</value>
-  </property> 
-  <property>
-    <name>yarn.resourcemanager.address</name>
-    <value>hdfs-master:8032</value>
-  </property>
-  <property>
-    <name>yarn.resourcemanager.webapp.address</name>
-    <value>hdfs-master:8088</value>
-  </property>
-  <property>
-    <name>yarn.resourcemanager.resource-tracker.address</name>
-    <value>hdfs-master:8031</value>
-  </property>
-  <property>
-    <name>yarn.resourcemanager.admin.address</name>
-    <value>hdfs-master:8033</value>
-  </property>
-  <property>
-    <name>yarn.nodemanager.aux-services</name>
-    <value>mapreduce_shuffle</value>
-  </property>
-  <property>
-    <name>yarn.resourcemanager.bind-host</name>
-    <value>0.0.0.0</value>
-  </property>
-  <property>
-    <name>yarn.nodemanager.bind-host</name>
-    <value>0.0.0.0</value>
-  </property>
-  <property>
-    <name>yarn.nodemanager.resource.memory-mb</name>
-    <value>20480</value>
-  </property> 
-  <property>
-    <name>yarn.nodemanager.resource.cpu-vcores</name>
-    <value>28</value>
-  </property>
-</configuration>
-```
-
-It is important to note that specific values must be set for the properties `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`. 
-* `yarn.nodemanager.resource.memory-mb`. It is the amount of physical memory, in MB, that can be allocated for containers. As our instances’ RAM is 32GB, we can consider that about 8GB are used by the operating system and other tasks, 1GB each for the HDFS *DataNode* and the YARN *NodeManager*, so that 22GB can be a good fit (the master instance should consider also the HDFS *NameNode* and the YARN *ResourceManager* and provide about 20 GB instead). Default value is 8192.
-* `yarn.nodemanager.resource.cpu-vcores`. It is the number of vcores that can be allocated for containers. As our instances have 32 vCPU's, and considering that the operating system uses one of them and one each for the HDFS *DataNode* and the YARN *NodeManager*, 29 seems to be a good choice (27 is used in the master). Default value is 8.
-
-Although not followed, [the official Cloudera documentation on YARN tuning](https://www.cloudera.com/documentation/enterprise/5-3-x/topics/cdh_ig_yarn_tuning.html) can provide an overview of the optimization of YARN clusters. In fact, if proper values of the properties above are not set, *NodeManagers* will not be authorized to register and the cluster will not be deployed.
-
 ### `slaves`
 Finally, the `slaves` file is updated, only on the master node:
 ```bash
@@ -364,43 +281,12 @@ To stop the HDFS cluster simply type:
 $HADOOP_HOME/sbin/stop-dfs.sh
 ```
 
-## Start YARN
-```bash
-$HADOOP_HOME/sbin/start-yarn.sh
-```
-
-The output of jps should list `NodeManager` and `ResourceManager` on the master node:
-```bash
-17089 DataNode
-16947 NameNode
-18516 NodeManager
-18375 ResourceManager
-18760 Jps
-17324 SecondaryNameNode
-```
-
-And `NodeManager` on each slave nodes.
-```bash
-8006 NodeManager
-6507 DataNode
-8395 Jps
-```
-
-The status of the YARN cluster can be verified in http://hdfs-master:8088/
-
-To stop the YARN cluster, simply type:
-```bash
-$HADOOP_HOME/sbin/stop-yarn.sh
-```
-
-It is possible to start (and stop) both the DFS and the YARN daemons, by using `$HADOOP_HOME/sbin/start-all.sh` and `$HADOOP_HOME/sbin/stop-all.sh` but a warning states that they are deprecated.
-
 ## Key take-aways
 
-Although works such as *Spark in action* (Manning, 2017) state that "The installation [of YARN and Hadoop] is straightforward", it is not actually true. We have found several issues when setting up the YARN cluster. If you have a similar environment to the one described here (OpenStack cloud with Ubuntu 16.06 instances), you shouldn't have any problem following the instructions. However, it is important to focus on the main stoppers we have found:
+Although works such as *Spark in action* (Manning, 2017) state that "The installation [of YARN and Hadoop] is straightforward", it is not actually true. We have found several issues when setting up the Hadoop cluster. If you have a similar environment to the one described here (OpenStack cloud with Ubuntu 16.06 instances), you shouldn't have any problem following the instructions. However, it is important to focus on the main stoppers we have found:
 *  password-less ssh is easy to implement provided that you can copy the keys to all the cluster instances. As we are deploying it in an OpenStack cloud that follows exactly the same principle, uploading a suitable key to the slaves can be tricky. We recommend the second alternative (using a specific pair of keys for enabling cluster communication) described above as it exposes the master key just for a while.
 * when only one network interface is in place, you don't have to worry about listening to several interfaces. However, OpenStack creates several interfaces and therefore if you wish to enable binding from any interface, related properties have to be set to 0.0.0.0 (all addresses on the local machine).
-* you have to carefully dimension the cluster. If you use small flavors, *NodeManagers* will not be able to gather enough resources and will be rejected at registration. Thus, you need to use instances with a certain amount of memory and properly configure `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`.
 
 ## See also
+* [Deploying YARN on a Hadoop cluster](./yarn-cluster-management.md)
 * [Running Spark on YARN](./spark-cluster-management.md)
