@@ -241,6 +241,6 @@ Although works such as *Spark in action* (Manning, 2017) state that "The install
 *  password-less ssh is easy to implement provided that you can copy the keys to all the cluster instances. As we are deploying it in an OpenStack cloud that follows exactly the same principle, uploading a suitable key to the slaves can be tricky. We recommend the second alternative (using a specific pair of keys for enabling cluster communication) described above as it exposes the master key just for a while.
 
 ## See also
-* [Deploying YARN on a Hadoop cluster](./yarn-clusters-setup.md)
+* [Deploying YARN on a Hadoop cluster](./yarn-cluster-setup.md)
 * [Running Spark on a YARN cluster](./spark-yarn-cluster-setup.md)
 * [Running Spark on a standalone cluster](./spark-standalone-cluster-setup.md)

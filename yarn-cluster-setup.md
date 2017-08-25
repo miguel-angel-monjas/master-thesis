@@ -125,4 +125,4 @@ We have mentioned previously some aspects to consider when setting up a Hadoop c
 
 ## See also
 * [Setting up a Hadoop cluster](./hadoop-cluster-setup.md)
-* [Running Spark on a YARN cluster](./spark-cluster-setup.md)
+* [Running Spark on a YARN cluster](./spark-yarn-cluster-setup.md)

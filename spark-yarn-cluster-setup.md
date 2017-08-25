@@ -48,4 +48,4 @@ hdsf-slave-2
 
 ## See also
 * [Setting up a Hadoop cluster](./hadoop-cluster-setup.md)
-* [Deploying YARN on a Hadoop cluster](./yarn-clusters-setup.md)
+* [Deploying YARN on a Hadoop cluster](./yarn-cluster-setup.md)
