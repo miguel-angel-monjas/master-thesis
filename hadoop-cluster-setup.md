@@ -4,11 +4,11 @@ This document is based on [the official Hadoop documentation](https://hadoop.apa
 The creation of a Hadoop cluster is an intermediate step in the deployment of a Spark cluster. The main reason to require a Hadoop cluster is the size of our datasets, for which a single instance is not enoug.
 
 ## Instance creation
-We create three instances in the OpenStack cloud: we’ll name them `hdfs-master`, `hdfs-slave-1` and `hdfs-slave-2`. The flavor used has the following features:
+We create three instances in the OpenStack cloud: we’ll name them `cluster-master`, `cluster-slave-1` and `cluster-slave-2`. The image used is Ubuntu 16.04 and the flavor (`Spark-Intensive`) has the following features:
 * **Memory**: 32 GB
 * **vCPU**: 32
 
-The image used is Ubuntu 16.06. All of them are provided a floating IP address (in our environment: `10.65.104.210`, `10.65.104.175`, and `10.65.104.176`).
+All of them are given a private IP address, `<master-ip-address>`, `<slave--ip-address>` and `<slave-2-ip-address>`. We also manually assign a floating IP address to the master instance, `<master-floating-ip-address>` (during setup, slave instances may be also assigned floating ip addresses. They are removed once the cluster is setup.
 
 ## Install Java on all instances
 We plan to install Oracle Java 8 and follow some tutorial found on the Internet ([here](http://tecadmin.net/install-oracle-java-8-jdk-8-ubuntu-via-ppa/) and [here](http://stackoverflow.com/questions/19275856/auto-yes-to-the-license-agreement-on-sudo-apt-get-y-install-oracle-java7-instal)):
@@ -71,12 +71,13 @@ sudo apt-get install ssh -y
 ```
 
 ## Update /etc/hosts in all instances
+Here it is important to note that private IP addreses must be used (no floating IP addresses are involved here).
 
 ```bash
 echo "
-10.65.104.210   hdfs-master
-10.65.104.175   hdfs-slave-1
-10.65.104.176   hdfs-slave-2
+<master-ip-address>		cluster-master
+<slave-1-ip-address>	cluster-slave-1
+<slave-2-ip-address>	cluster-slave-2
 " | sudo tee --append /etc/hosts
 ```
 
@@ -92,8 +93,8 @@ chmod 0600 ~/.ssh/id_rsa
 
 Finally, the connection can be tested by using the following command (`StrictHostKeyChecking=no` can be used to avoid an interactive dialogue in the first connection):
 ```bash
-ssh -o StrictHostKeyChecking=no hdfs-slave-1
-ssh -o StrictHostKeyChecking=no hdfs-slave-2
+ssh -o StrictHostKeyChecking=no cluster-slave-1
+ssh -o StrictHostKeyChecking=no cluster-slave-2
 ```
 
 If we do not want to leave the private key in the master instance, we can try an alternative schema, using the private key just to get access to the slave instances and removing it afterwards. First, we follow the procedures to handle the inlab private key in the master instance described previously (upload and permissions set). The result will be having a private key with proper permissions in `~/.ssh/id_rsa`.
@@ -107,7 +108,7 @@ chmod 0600 ~/.ssh/authorized_keys
 
 Once created, we need to upload the public key to the slaves by means of `ssh-copy-id`. 
 ```bash
-for x in hdfs-slave-1 hdfs-slave-2; ssh-copy-id -i ~/.ssh/idhdfs_rsa.pub $x; done
+for x in cluster-slave-1 cluster-slave-2; ssh-copy-id -i ~/.ssh/idhdfs_rsa.pub $x; done
 ```
 
 Finally, we delete the `inlab` private key (`id_rsa`) and rename the newly-created pair of keys so that the default file names are used:
@@ -119,12 +120,12 @@ mv ~/.ssh/idhdfs_rsa.pub ~/.ssh/id_rsa.pub
 
 Verify that seamless ssh connection is enabled by using the commands suggested in the previous alternative:
 ```bash
-ssh -o StrictHostKeyChecking=no hdfs-slave-1
-ssh -o StrictHostKeyChecking=no hdfs-slave-2
+ssh -o StrictHostKeyChecking=no cluster-slave-1
+ssh -o StrictHostKeyChecking=no cluster-slave-2
 ```
 
 ## Configure the cluster instances
-Three configuration files have to be updated (or created) on master and slave instances in order to have our cluster configured: `core-site.xml`, `hdfs-site.xml`, and `slaves` (mind that some variables have been deprecated as new versions of Hadoop are releases, be aware of that). They are available in the directory `$HADOOP_HOME/etc/hadoop`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
+Three configuration files have to be updated on master and slave instances in order to have our cluster configured: `core-site.xml`, `hdfs-site.xml`, and `slaves` (mind that some variables have been deprecated as new versions of Hadoop are released, be aware of that). They are available in the directory `$HADOOP_HOME/etc/hadoop`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
 
 ### `core-site.xml`
 First, `core-site.xml` must be updated on all instances (master and slaves), in order to set the properties `hadoop.tmp.dir` and `fs.defaultFS`:
@@ -140,7 +141,7 @@ nano $HADOOP_HOME/etc/hadoop/core-site.xml
   </property>
   <property>
     <name>fs.defaultFS</name>
-     <value>hdfs://hdfs-master:9000</value>
+     <value>hdfs://cluster-master:9000</value>
     <description>Use HDFS as file storage engine</description>
   </property>
 </configuration>
@@ -242,7 +243,7 @@ mkdir -p /home/ubuntu/hdfs/datanode
 Finally, the `slaves` file is updated, only on the master node:
 ```bash
 echo "
-hdfs-master
+cluster-master
 hsdf-slave-1
 hdsf-slave-2
 " >> $HADOOP_HOME/etc/hadoop/slaves
@@ -254,7 +255,7 @@ hdsf-slave-2
 $HADOOP_HOME/bin/hdfs namenode -format
 ```
 
-## Start the Distributed File System:
+## Start the Distributed File System
 Although it is possible to start all daemons at once, it is better to run separately HDFS and YARN so that you can verify whether everything is OK. Scripts for starting and stopping the HDFS and YARN daemons are available in the `$HADOOP_HOME/sbin` folder.
 
 HDSF daemons are started by running, only in the master node:
@@ -272,9 +273,9 @@ To validate it has started successfully, you must run `jps` on the master and sl
 
 And a `DataNode` in each slave instance.
 
-If you do not get this output in all the instances of the cluster, you need to analyze the log files available at `$HADOOP_HOME/logs`. Relevant log files are `hadoop-ubuntu-datanode-hdfs-master.log`, `hadoop-ubuntu-namenode-hdfs-master.log`, and `hadoop-ubuntu-secondarynamenode-hdfs-master.log`.
+If you do not get this output in all the instances of the cluster, you need to analyze the log files available at `$HADOOP_HOME/logs`. Relevant log files are `hadoop-ubuntu-datanode-cluster-master.log`, `hadoop-ubuntu-namenode-cluster-master.log`, and `hadoop-ubuntu-secondarynamenode-cluster-master.log`.
 
-The status of the HDFS cluster can be verified in http://hdfs-master:50070/
+The status of the HDFS cluster can be verified in http://cluster-master:50070/
 
 To stop the HDFS cluster simply type:
 ```bash
@@ -288,5 +289,5 @@ Although works such as *Spark in action* (Manning, 2017) state that "The install
 * when only one network interface is in place, you don't have to worry about listening to several interfaces. However, OpenStack creates several interfaces and therefore if you wish to enable binding from any interface, related properties have to be set to 0.0.0.0 (all addresses on the local machine).
 
 ## See also
-* [Deploying YARN on a Hadoop cluster](./yarn-cluster-management.md)
-* [Running Spark on YARN](./spark-cluster-management.md)
+* [Deploying YARN on a Hadoop cluster](./yarn-clusters-setup.md)
+* [Running Spark on a YARN cluster](./spark-cluster-setup.md)

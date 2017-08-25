@@ -1,4 +1,4 @@
-# Running Spark on YARN
+# Running Spark on a YARN cluster
 In [Setting up a Hadoop cluster](./spark-cluster-management.md) we described how to set up a YARN-enabled Hadoop cluster. It is made of a master node (hosting an HDFS *NameNode* and a YARN "ResourceManager") and two slaves (running each an HDFS *DataNode* and a YARN *NodeManager*; the master node hosts a *DataNode* and a "NodeManager* as well). Here, we will describe how to set up a Spark cluster with Jupyter Notebook support on the Hadoop cluster.
 
 ## Install Spark on all instances
@@ -40,8 +40,12 @@ export SPARK_MASTER_IP=10.65.104.210
 Finally, the Spark `slaves` file is updated, only on the master node:
 ```bash
 echo "
-hdfs-master
+cluster-master
 hsdf-slave-1
 hdsf-slave-2
 " >> $SPARK_HOME/conf/slaves
 ```
+
+## See also
+* [Setting up a Hadoop cluster](./hadoop-cluster-setup.md)
+* [Deploying YARN on a Hadoop cluster](./yarn-clusters-setup.md)
