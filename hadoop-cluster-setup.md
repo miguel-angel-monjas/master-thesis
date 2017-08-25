@@ -56,12 +56,9 @@ source ~/.bashrc
 ```
 
 Finally, we update the `$JAVA_HOME` variable in the `hadoop_env.sh` configuration file on master and slave nodes:
+
 ```bash
-nano $HADOOP_HOME/etc/hadoop/hadoop-env.sh
-```
-```bash
-#export JAVA_HOME=${JAVA_HOME}
-export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")
+sed -i 's/export JAVA_HOME=${JAVA_HOME}/#export JAVA_HOME=${JAVA_HOME}\nexport JAVA_HOME=$(readlink -f \/usr\/bin\/java | sed "s:bin\/java::")/' $HADOOP_HOME/etc/hadoop/hadoop-env.sh
 ```
 
 ## Install ssh on all instances
@@ -108,7 +105,7 @@ chmod 0600 ~/.ssh/authorized_keys
 
 Once created, we need to upload the public key to the slaves by means of `ssh-copy-id`. 
 ```bash
-for x in cluster-slave-1 cluster-slave-2; ssh-copy-id -i ~/.ssh/idhdfs_rsa.pub $x; done
+for x in cluster-slave-1 cluster-slave-2; do ssh-copy-id -i ~/.ssh/idhdfs_rsa.pub $x; done
 ```
 
 Finally, we delete the `inlab` private key (`id_rsa`) and rename the newly-created pair of keys so that the default file names are used:
@@ -182,50 +179,6 @@ nano $HADOOP_HOME/etc/hadoop/hdfs-site.xml
     not exist are ignored.
     </description>
   </property>
-  <property>
-    <name>dfs.namenode.rpc-bind-host</name>
-    <value>0.0.0.0</value>
-    <description>The actual address the RPC server will bind to. If 
-    this optional address is set, it overrides only the hostname 
-    portion of dfs.namenode.rpc-address. It can also be specified per 
-    name node or name service for HA/Federation. This is useful for 
-    making the name node listen on all interfaces by setting it to 
-    0.0.0.0.
-    </description>
-  </property>
-  <property>
-    <name>dfs.namenode.servicerpc-bind-host</name>
-    <value>0.0.0.0</value>
-    <description>The actual address the service RPC server will bind 
-    to. If this optional address is set, it overrides only the 
-    hostname portion of dfs.namenode.servicerpc-address. It can also 
-    be specified per name node or name service for HA/Federation. 
-    This is useful for making the name node listen on all interfaces 
-    by setting it to 0.0.0.0.
-    </description>
-  </property>
-  <property>
-    <name>dfs.namenode.http-bind-host</name>
-    <value>0.0.0.0</value>
-    <description>The actual address the HTTP server will bind to. If 
-    this optional address is set, it overrides only the hostname 
-    portion of dfs.namenode.http-address. It can also be specified 
-    per name node or name service for HA/Federation. This is useful 
-    for making the name node HTTP server listen on all interfaces by 
-    setting it to 0.0.0.0.
-    </description>
-  </property>
-  <property>
-    <name>dfs.namenode.https-bind-host</name>
-    <value>0.0.0.0</value>
-    <description>The actual address the HTTPS server will bind to. If 
-    this optional address is set, it overrides only the hostname 
-    portion of dfs.namenode.https-address. It can also be specified 
-    per name node or name service for HA/Federation. This is useful 
-    for making the name node HTTPS server listen on all interfaces by 
-    setting it to 0.0.0.0.
-    </description>
-  </property>
 </configuration>
 ```
 
@@ -244,8 +197,8 @@ Finally, the `slaves` file is updated, only on the master node:
 ```bash
 echo "
 cluster-master
-hsdf-slave-1
-hdsf-slave-2
+cluster-slave-1
+cluster-slave-2
 " >> $HADOOP_HOME/etc/hadoop/slaves
 ```
 
@@ -275,7 +228,7 @@ And a `DataNode` in each slave instance.
 
 If you do not get this output in all the instances of the cluster, you need to analyze the log files available at `$HADOOP_HOME/logs`. Relevant log files are `hadoop-ubuntu-datanode-cluster-master.log`, `hadoop-ubuntu-namenode-cluster-master.log`, and `hadoop-ubuntu-secondarynamenode-cluster-master.log`.
 
-The status of the HDFS cluster can be verified in http://cluster-master:50070/
+The status of the HDFS cluster can be verified in `http://<master-floating-ip-address>:50070/`
 
 To stop the HDFS cluster simply type:
 ```bash
@@ -284,10 +237,10 @@ $HADOOP_HOME/sbin/stop-dfs.sh
 
 ## Key take-aways
 
-Although works such as *Spark in action* (Manning, 2017) state that "The installation [of YARN and Hadoop] is straightforward", it is not actually true. We have found several issues when setting up the Hadoop cluster. If you have a similar environment to the one described here (OpenStack cloud with Ubuntu 16.06 instances), you shouldn't have any problem following the instructions. However, it is important to focus on the main stoppers we have found:
+Although works such as *Spark in action* (Manning, 2017) state that "The installation [of YARN and Hadoop] is straightforward", it is not totally true. We have found several issues when setting up the Hadoop cluster. If you have a similar environment to the one described here (OpenStack cloud with Ubuntu 16.04 instances), you shouldn't have any problem following the instructions. However, it is important to focus on the main caveats found:
 *  password-less ssh is easy to implement provided that you can copy the keys to all the cluster instances. As we are deploying it in an OpenStack cloud that follows exactly the same principle, uploading a suitable key to the slaves can be tricky. We recommend the second alternative (using a specific pair of keys for enabling cluster communication) described above as it exposes the master key just for a while.
-* when only one network interface is in place, you don't have to worry about listening to several interfaces. However, OpenStack creates several interfaces and therefore if you wish to enable binding from any interface, related properties have to be set to 0.0.0.0 (all addresses on the local machine).
 
 ## See also
 * [Deploying YARN on a Hadoop cluster](./yarn-clusters-setup.md)
-* [Running Spark on a YARN cluster](./spark-cluster-setup.md)
+* [Running Spark on a YARN cluster](./spark-yarn-cluster-setup.md)
+* [Running Spark on a standalone cluster](./spark-standalone-cluster-setup.md)

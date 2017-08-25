@@ -1,5 +1,5 @@
 # Deploying YARN on a Hadoop cluster
-In [Setting up a Hadoop cluster](./spark-cluster-management.md) we described how to set up a Hadoop cluster. It is made of a master node (hosting an HDFS *NameNode* and a HDFS "DataNode") and two slaves (running each an HDFS *DataNode*). Here, we will describe how to deploy YARN on top of it.
+In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) we described how to set up a Hadoop cluster. It is made of a master node (hosting an HDFS *NameNode* and a HDFS "DataNode") and two slaves (running each an HDFS *DataNode*). Here, we will describe how to deploy YARN on top of it.
 
 ## Configure the cluster instances
 Two additional files have to be updated (or created) on master and slave instances in order to deploy YARN on the cluster: `mapred-site.xml` and `yarn-site.xml` (mind that some variables have been deprecated as new versions of Hadoop are released). As with the plain Hadoop case, the files are in the directory `$HADOOP_HOME/etc/hadoop`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
