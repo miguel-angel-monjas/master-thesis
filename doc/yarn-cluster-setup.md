@@ -1,14 +1,14 @@
 # Deploying YARN on a Hadoop cluster
-In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) we described how to set up a Hadoop cluster. It is made of a master node (hosting an HDFS *NameNode* and a HDFS "DataNode") and two slaves (running each an HDFS *DataNode*). Here, we will describe how to deploy YARN on top of it.
+In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how to set up a Hadoop cluster was provided. It is made of a master node (hosting an HDFS *NameNode* and a HDFS "DataNode") and two slaves (running each an HDFS *DataNode*). Here you have a description on how to deploy YARN on top of it.
 
-## Configure the cluster instances
-Two additional files have to be updated (or created) on master and slave instances in order to deploy YARN on the cluster: `mapred-site.xml` and `yarn-site.xml` (mind that some variables have been deprecated as new versions of Hadoop are released). As with the plain Hadoop case, the files are in the directory `$HADOOP_HOME/etc/hadoop`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
+## Cluster instances configurations
+Assuming that the HDFS cluster is already running, two additional files have to be updated (or created) on master and slave instances in order to deploy YARN on the cluster: `mapred-site.xml` and `yarn-site.xml` (mind that some variables have been deprecated as new versions of Hadoop come out). As with the HDFS cluster, the files are in the directory `$HADOOP_CONF_DIR`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
 
 ### `mapred-site.xml`
 `mapred-site.xml` must be created on the master node in order to activate YARN by setting the `mapreduce.framework.name` property. Default property values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml):
 ```bash
-cp $HADOOP_HOME/etc/hadoop/mapred-site.xml.template $HADOOP_HOME/etc/hadoop/mapred-site.xml
-nano $HADOOP_HOME/etc/hadoop/mapred-site.xml
+cp $HADOOP_CONF_DIR/mapred-site.xml.template $HADOOP_CONF_DIR/mapred-site.xml
+nano $HADOOP_CONF_DIR/mapred-site.xml
 ```
 ```xml
 <configuration>
@@ -27,12 +27,12 @@ nano $HADOOP_HOME/etc/hadoop/mapred-site.xml
 * Enable all interfaces are listened to. Otherwise, connection between nodes will not be possible (it follows a similar pattern to plain Hadoop configuration)
 * Dimension the YARN cluster.
 
-The YARN *ResourceManager* implements three different schedulers. At the moment, we will leave the default option (*Capacity Scheduler*, configured via `yarn.resourcemanager.scheduler.class`).
+The YARN *ResourceManager* implements three different schedulers. At the moment, the default option (*Capacity Scheduler*, configured via `yarn.resourcemanager.scheduler.class`) is kept.
 
 Default values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-common/yarn-default.xml).
 
 ```bash
-nano $HADOOP_HOME/etc/hadoop/yarn-site.xml
+nano $HADOOP_CONF_DIR/yarn-site.xml
 ```
 ```xml
 <configuration>
@@ -80,12 +80,12 @@ nano $HADOOP_HOME/etc/hadoop/yarn-site.xml
 ```
 
 It is important to note that specific values must be set for the properties `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`. 
-* `yarn.nodemanager.resource.memory-mb`. It is the amount of physical memory, in MB, that can be allocated for containers. As our instances’ RAM is 32GB, we can consider that about 8GB are used by the operating system and other tasks, 1GB each for the HDFS *DataNode* and the YARN *NodeManager*, so that 22GB can be a good fit (the master instance should consider also the HDFS *NameNode* and the YARN *ResourceManager* and provide about 20 GB instead). Default value is 8192.
-* `yarn.nodemanager.resource.cpu-vcores`. It is the number of vcores that can be allocated for containers. As our instances have 32 vCPU's, and considering that the operating system uses one of them and one each for the HDFS *DataNode* and the YARN *NodeManager*, 29 seems to be a good choice (27 is used in the master). Default value is 8.
+* `yarn.nodemanager.resource.memory-mb`. It is the amount of physical memory, in MB, that can be allocated for containers. As the instances’ RAM in the considered environment is 32GB, it can be considered that about 8GB are used by the operating system and other tasks, 1GB each for the HDFS *DataNode* and the YARN *NodeManager*, so that 22GB can be a good fit (the master instance should consider also the HDFS *NameNode* and the YARN *ResourceManager* and provide about 20 GB instead). Default value is 8192.
+* `yarn.nodemanager.resource.cpu-vcores`. It is the number of vcores that can be allocated for containers. As the instances have 32 vCPU's, and considering that the operating system uses one of them and one each for the HDFS *DataNode* and the YARN *NodeManager*, 29 seems to be a good choice (27 is used in the master). Default value is 8.
 
 Although not followed, [the official Cloudera documentation on YARN tuning](https://www.cloudera.com/documentation/enterprise/5-3-x/topics/cdh_ig_yarn_tuning.html) can provide an overview of the optimization of YARN clusters. In fact, if proper values of the properties above are not set, *NodeManagers* will not be authorized to register and the cluster will not be deployed.
 
-## Start YARN
+## YARN start
 Start YARN once the Distributed File System has been already started:
 
 ```bash
@@ -119,8 +119,7 @@ $HADOOP_HOME/sbin/stop-yarn.sh
 It is possible to start (and stop) both the DFS and the YARN daemons, by using `$HADOOP_HOME/sbin/start-all.sh` and `$HADOOP_HOME/sbin/stop-all.sh` but a warning states that such scripts are deprecated.
 
 ## Key take-aways
-
-We have mentioned previously some aspects to consider when setting up a Hadoop cluster. Some of them (binding to all interfaces) apply to the YARN cluster as well. However, new issues arise:
+Some considerations when setting up a Hadoop cluster have been already mentioned. Some of them (binding to all interfaces) apply to the YARN cluster as well. However, new issues arise:
 * you have to carefully dimension the cluster. If you use small flavors, *NodeManagers* will not be able to gather enough resources and will be rejected at registration. Thus, you need to use instances with a certain amount of memory and properly configure `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`.
 
 ## See also
