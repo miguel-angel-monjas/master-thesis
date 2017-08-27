@@ -38,7 +38,14 @@ export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")
 ' >> $SPARK_HOME/conf/spark-env.sh
 ```
 
-Finally, the Spark `slaves` file is updated, only on the master node. Notice it has the same contents as the Hadoop `slaves` file.
+Finally, you can use a not so verbose logging level:
+```bash
+cp $SPARK_HOME/conf/log4j.properties.template $SPARK_HOME/conf/log4j.properties
+sed -i 's/log4j.rootCategory=INFO, console/log4j.rootCategory=WARN, console/' $SPARK_HOME/conf/log4j.properties
+```
+
+## Spark cluster slaves configuration
+The Spark `slaves` file must be updated, only on the master node. Notice it has the same contents as the Hadoop `slaves` file.
 ```bash
 echo "
 cluster-master
@@ -79,7 +86,9 @@ Or:
 $SPARK_HOME/sbin/stop-all.sh 
 ``` 
 
-## Jupyter notebook installation
+## Jupyter Notebook installation
+An Anaconda Python distribution is installed on master and slave instances:
+
 ```bash
 wget https://repo.continuum.io/archive/Anaconda2-4.2.0-Linux-x86_64.sh
 sudo /bin/bash Anaconda2-4.2.0-Linux-x86_64.sh -b -p /usr/local/anaconda
@@ -90,6 +99,7 @@ rm Anaconda2-4.2.0-Linux-x86_64.sh
 /usr/local/anaconda/bin/jupyter notebook --generate-config -y
 ```
 
+Next, the following environment variables must be set in the `.bashrc` file under `/home/ubuntu` (both on master and slave nodes):
 ```bash
 echo '
 # Set ANACONDA_HOME
@@ -103,6 +113,34 @@ The `.bashrc` file is reloaded:
 ```bash
 source ~/.bashrc
 ```
+
+Verify that Python 2.7 has been properly installed by typing `python`. The output should be similar to this:
+```bash
+Python 2.7.12 |Anaconda custom (64-bit)| (default, Jul  2 2016, 17:42:40)
+[GCC 4.4.7 20120313 (Red Hat 4.4.7-1)] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+Anaconda is brought to you by Continuum Analytics.
+Please check out: http://continuum.io/thanks and https://anaconda.org
+>>>
+```
+
+Verify that PySpark is properly installed without using Jupyter Notebook first:
+```bash
+```
+
+## Jupyter Notebook configuration
+A folder for notebooks and kernels must be created:
+```bash
+mkdir ~/notebooks
+```
+
+Next, the Jupyter Notebook configuration file, `~/.jupyter/jupyter_notebook_config.py`, must be updated to use the just created folder and for enable the access from external ip addresses to the notebooks:
+```bash
+sed -i "s/#c.NotebookApp.notebook_dir = u''/c.NotebookApp.notebook_dir = u'\/home\/ubuntu\/notebooks'/" ~/.jupyter/jupyter_notebook_config.py
+sed -i "s/#c.NotebookApp.ip = 'localhost'/c.NotebookApp.ip = '*'/" ~/.jupyter/jupyter_notebook_config.py
+```
+
+Finally, Spark must be configured 
 
 ```bash
 pyspark --master spark://<master-ip-address>:7077
