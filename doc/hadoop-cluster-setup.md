@@ -3,6 +3,21 @@ This document is based on [the official Hadoop documentation](https://hadoop.apa
 
 The creation of a Hadoop cluster is an intermediate step in the deployment of a Spark cluster. The main reason to require a Hadoop cluster is the size of the datasets, for which a single instance is not enough.
 
+* [Instance creation](#Instance creation)
+* [Java installation on all instances](#Java installation on all instances)
+* [Hadoop installation on all the instances](#Hadoop installation on all the instances)
+* [Hadoop environment variables setup on master and slave nodes](#Hadoop environment variables setup on master and slave nodes)
+* [*ssh* installation on all instances](#ssh installation on all instances)
+* [`/etc/hosts` update in all instances](#/etc/hosts update in all instances)
+* [Cluster instances configuration](#Cluster instances configuration)
+* [Password-less *ssh* setup](#Password-less ssh setup)
+* [HDFS filesystem format via the *NameNode*](#HDFS filesystem format via the NameNode)
+* [Distributed File System start and stop](#Distributed File System start and stop)
+* [Key take-aways](#Key take-aways)
+* [See also](#See also)
+
+----
+
 ## Instance creation
 Three instances are created in the OpenStack cloud: the following hostnames will be assigned `cluster-master`, `cluster-slave-1` and `cluster-slave-2`. The image used is Ubuntu 16.04 and the flavor (`Spark-Intensive`) has the following features:
 * **Memory**: 32 GB
@@ -21,6 +36,13 @@ sudo add-apt-repository -y ppa:webupd8team/java
 sudo apt-get update
 sudo apt-get install -y oracle-java8-installer
 sudo apt-get install -y oracle-java8-set-default
+```
+
+Verification of Java installacion can be done by typing `java -version`. The output must be something like this:
+```bash
+java version "1.8.0_144"
+Java(TM) SE Runtime Environment (build 1.8.0_144-b01)
+Java HotSpot(TM) 64-Bit Server VM (build 25.144-b01, mixed mode)
 ```
 
 ## Hadoop installation on all the instances
@@ -131,9 +153,9 @@ Three configuration files have to be updated on master and slave instances in or
 ### `core-site.xml`
 First, `core-site.xml` must be updated on all instances (master and slaves), in order to set the properties `hadoop.tmp.dir` and `fs.defaultFS`:
 ```bash
-nano $HADOOP_CONF_DIR/core-site.xml
-```
-```xml
+echo '<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
 <configuration>
   <property>
     <name>hadoop.tmp.dir</name>
@@ -146,16 +168,16 @@ nano $HADOOP_CONF_DIR/core-site.xml
     <description>Use HDFS as file storage engine</description>
   </property>
 </configuration>
+' > $HADOOP_CONF_DIR/core-site.xml
 ```
 
 ### `hdfs-site.xml`
 `hdfs-site.xml` must be updated on master and slave nodes in order to activate the properties `dfs.replication`, `dfs.namenode.name.dir`, and `dfs.datanode.name.dir`. It also sets several properties to enable the instances to listen on all interfaces (otherwise, the instances will not be able to connect to each other). See the [official guidelines for HDFS multihoming environments](https://hadoop.apache.org/docs/r2.8.0/hadoop-project-dist/hadoop-hdfs/HdfsMultihoming.html#Ensuring_HDFS_Daemons_Bind_All_Interfaces). Default values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml):
 ```bash
-nano $HADOOP_CONF_DIR/hdfs-site.xml
-```
-```xml
+echo '<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
-<property>
+  <property>
   <name>dfs.replication</name>
     <value>3</value>
     <description>Default block replication.
@@ -184,6 +206,7 @@ nano $HADOOP_CONF_DIR/hdfs-site.xml
     </description>
   </property>
 </configuration>
+' > $HADOOP_CONF_DIR/hdfs-site.xml
 ```
 
 Some remarks about the variables:
@@ -199,8 +222,7 @@ mkdir -p /home/ubuntu/hdfs/datanode
 ### `slaves`
 Finally, the `slaves` file is updated, only on the master node:
 ```bash
-echo "
-cluster-master
+echo "cluster-master
 cluster-slave-1
 cluster-slave-2
 " >> $HADOOP_CONF_DIR/slaves
@@ -212,7 +234,7 @@ It can be done by means of the HDFS CLI (mind that if the filesystem is formatte
 $HADOOP_HOME/bin/hdfs namenode -format
 ```
 
-## Distributed File System start
+## Distributed File System start and stop
 Although it is possible to start HDFS and YARN daemons at once, it is better to run tehem separately, obviously if YARN is not needed. The scripts for starting and stopping the HDFS and YARN daemons are available in the `$HADOOP_HOME/sbin` folder. HDSF daemons are started by running, only in the master node, the following script:
 ```bash
 $HADOOP_HOME/sbin/start-dfs.sh
@@ -238,7 +260,6 @@ $HADOOP_HOME/sbin/stop-dfs.sh
 ```
 
 ## Key take-aways
-
 Works such as *Spark in action* (Manning, 2017) state that "The installation [of YARN and Hadoop] is straightforward", but depending on the environment it can be not totally true. The main issues addressed when setting up the Hadoop cluster in the considered scenario (OpenStack cloud with Ubuntu 16.04 instances) are the following ones:
 * private IP addresses must be used to refer to the cluster instances in the configuration files. If floating IP addresses are used, it will be not possible to connect any instance to each other (it is possible to override this behavior by setting the properties `*-bind-host` en `hdfs-site.xml` to 0.0.0.0, but this kind of configuration is not possible in Spark).
 * password-less ssh is easy to implement provided that it is possible copy the public keys to all the slave instances. As an OpenStack cloud that follows exactly the same principle is used, uploading a suitable key to the slaves can be tricky. The second alternative described above (using a specific pair of keys for enabling cluster communication) is recommended as it exposes the cloud master key just for a while.

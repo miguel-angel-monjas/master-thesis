@@ -7,10 +7,8 @@ Assuming that the HDFS cluster is already running, two additional files have to 
 ### `mapred-site.xml`
 `mapred-site.xml` must be created on the master node in order to activate YARN by setting the `mapreduce.framework.name` property. Default property values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml):
 ```bash
-cp $HADOOP_CONF_DIR/mapred-site.xml.template $HADOOP_CONF_DIR/mapred-site.xml
-nano $HADOOP_CONF_DIR/mapred-site.xml
-```
-```xml
+echo '<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
   <property>
     <name>mapreduce.framework.name</name>
@@ -18,6 +16,7 @@ nano $HADOOP_CONF_DIR/mapred-site.xml
     <description>The framework for running mapreduce jobs</description>
   </property>
 </configuration>
+' > $HADOOP_CONF_DIR/mapred-site.xml
 ```
 
 ### `yarn-site.xml`
@@ -32,29 +31,27 @@ The YARN *ResourceManager* implements three different schedulers. At the moment,
 Default values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-common/yarn-default.xml).
 
 ```bash
-nano $HADOOP_CONF_DIR/yarn-site.xml
-```
-```xml
+echo '<?xml version="1.0"?>
 <configuration>
   <property>
     <name>yarn.resourcemanager.scheduler.address</name>
-    <value>cluster-master:8030</value>
+    <value>hdfs-master:8030</value>
   </property> 
   <property>
     <name>yarn.resourcemanager.address</name>
-    <value>cluster-master:8032</value>
+    <value>hdfs-master:8032</value>
   </property>
   <property>
     <name>yarn.resourcemanager.webapp.address</name>
-    <value>cluster-master:8088</value>
+    <value>hdfs-master:8088</value>
   </property>
   <property>
     <name>yarn.resourcemanager.resource-tracker.address</name>
-    <value>cluster-master:8031</value>
+    <value>hdfs-master:8031</value>
   </property>
   <property>
     <name>yarn.resourcemanager.admin.address</name>
-    <value>cluster-master:8033</value>
+    <value>hdfs-master:8033</value>
   </property>
   <property>
     <name>yarn.nodemanager.aux-services</name>
@@ -69,14 +66,23 @@ nano $HADOOP_CONF_DIR/yarn-site.xml
     <value>0.0.0.0</value>
   </property>
   <property>
+    <name>yarn.resourcemanager.hostname</name>
+    <value>hdfs-master</value>
+  </property>
+  <property>
     <name>yarn.nodemanager.resource.memory-mb</name>
     <value>20480</value>
   </property> 
   <property>
+    <name>yarn.scheduler.minimum-allocation-mb</name>
+    <value>2048</value>
+  </property> 
+  <property>
     <name>yarn.nodemanager.resource.cpu-vcores</name>
     <value>28</value>
-  </property>
+  </property> 
 </configuration>
+' > $HADOOP_CONF_DIR/yarn-site.xml
 ```
 
 It is important to note that specific values must be set for the properties `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`. 
