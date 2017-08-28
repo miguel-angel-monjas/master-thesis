@@ -2,14 +2,14 @@
 In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how to set up a Hadoop cluster was provided. It is made of a master node (hosting an HDFS *NameNode* and a HDFS "DataNode") and two slaves (running an HDFS *DataNode* each). Here, a description on e how to deploy a Spark cluster in stand-alone mode on top of it is provided. As YARN is not used, no dependencies between the Hadoop and the Spark clusters will exist and Hadoop will simply provide storage capabilities. The official documentation can be accessed [here](https://spark.apache.org/docs/latest/spark-standalone.html).
 
 * [Pre-requisites](#Pre-requisites)
-* [Spark installation on all instances](#Spark installation on all instances)
-* [Spark environment variables setup on master and slave nodes](#Spark environment variables setup on master and slave nodes)
-* [Spark cluster slaves configuration](#Spark cluster slaves configuration)
-* [Cluster start and stop](#Cluster start and stop)
-* [Python and Jupyter Notebook installation](#Python and Jupyter Notebook installation)
-* [Jupyter Notebook configuration](#Jupyter Notebook configuration)
-* [Key take-aways](#Key take-aways)
-* [See also](#See also)
+* [Spark installation on all instances](#spark-installation-on-all-instances)
+* [Spark environment variables setup on master and slave nodes](#spark-environment-variables-setup-on-master-and-slave-nodes)
+* [Spark cluster slaves configuration](#spark-cluster-slaves-configuration)
+* [Cluster start and stop](#cluster-start-and-stop)
+* [Python and Jupyter Notebook installation](#python-and-jupyter-notebook-installation)
+* [Jupyter Notebook configuration](#jupyter-notebook-configuration)
+* [Key take-aways](#key-take-aways)
+* [See also](#see-also)
 
 ----
 
@@ -17,7 +17,7 @@ In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how
 Hadoop 2.7.4 is installed and a cluster is set up as described in [Setting up a Hadoop cluster](./spark-cluster-management.md).
 
 ## Spark installation on all instances
-A Spark release compatible with Hadoop 2.7.4, [Spark 2.0.2](https://spark.apache.org/releases/spark-release-2-0-2.html), is chosen (see a discussion on the version [below](#Key take-aways))
+A Spark release compatible with Hadoop 2.7.4, [Spark 2.0.2](https://spark.apache.org/releases/spark-release-2-0-2.html), is chosen (see a discussion on the version [below](#key-take-aways)
 
 ```bash
 wget http://d3kbcqa49mib13.cloudfront.net/spark-2.0.2-bin-hadoop2.7.tgz
@@ -77,6 +77,7 @@ Type :help for more information.
 If you try to run `pyspark`, an error will be raised  (sort of "Python not found" error), as python has not been installed yet.
 
 Before leaving the shell, it is possible to verify the status of the Spark context created by running the shell in `http://<master-floating-ip-address>:4040/`:
+
 ![Spark Context UI](./spark-context-shell-idle.PNG)
 
 ## Spark cluster slaves configuration
@@ -109,6 +110,7 @@ To validate the cluster has been successfully started, `jps` can be run on the m
 And a `Worker` process in each slave instance.
 
 The status of the Spark cluster can be verified in `http://<master-floating-ip-address>:8080/`:
+
 ![Spark Standalone Cluster UI](./spark-standalone-idle.PNG)
 
 Three different Workers must appear, each of them in the private IP address assigned to each instance (the Spark context UI is not available). No applications (running or completed) are listed and no Spark context UI is available.
@@ -148,6 +150,7 @@ Type :help for more information.
 ```
 
 If we verify the status of the Spark cluster (in `http://<master-floating-ip-address>:8080/`):
+
 ![Spark Standalone Cluster UI](./spark-standalone-shell.PNG)
 
 We find the existing *Workers* listed in the previous screenshot **and** the Spark shell as a new *Running Application*. At the same time, the Spark context UI (`http://<master-floating-ip-address>:4040/`) is available as well.
@@ -162,7 +165,7 @@ sudo chown -R ubuntu:ubuntu /usr/local/anaconda/
 rm Anaconda2-4.2.0-Linux-x86_64.sh
 /usr/local/anaconda/bin/conda update -y conda
 ```
-Additionall, `[findspark](https://github.com/minrk/findspark)` is installed and a configuration file for Jupyter Notebook is created.
+Additionally, [`findspark`](https://github.com/minrk/findspark) is installed and a configuration file for Jupyter Notebook is created.
 
 ```bash
 /usr/local/anaconda/bin/conda install -c conda-forge findspark -y
@@ -231,12 +234,11 @@ pyspark --master spark://<master-ip-address>:7077
 ```
 
 ## Key take-aways
-* Installation and deployment of Spark is supposed to be a simple and straightforward. Downloading, unpacking and minimal configuration would be enough for starting to work (tuning is absolutely necessary, but even with default options Spark should offer the standard functionality). However, a version downgrade from the version initially used ([Spark 2.1.1](https://spark.apache.org/releases/spark-release-2-1-1.html)) has been necessary as, once Spark was installed, when running `spartk-shell`, the following error popped up:
+* Installation and deployment of Spark is supposed to be a simple and straightforward. Downloading, unpacking and minimal configuration would be enough for starting to work (tuning is absolutely necessary, but even with default options Spark should offer the standard functionality). However, a version downgrade from the version initially used ([Spark 2.1.1](https://spark.apache.org/releases/spark-release-2-1-1.html)) has been necessary as, once Spark was installed, when running `spartk-shell`, the following error popped up (the same behavior has been observed with Spark 2.2.0, so that we eventually fell back to Spark 2.0.2):
 ```bash
 java.lang.IllegalArgumentException: Error while instantiating 'org.apache.spark.sql.hive.HiveSessionState'
 ```
-    - The same behavior was observed with Spark 2.2.0, so that finally, we fell back to Spark 2.0.2.
-* If an error related to the lack of entrophy is raised when running `spark-shell` or `pyspark` (`https://www.howtoforge.com/helping-the-random-number-generator-to-gain-enough-entropy-with-rng-tools-debian-lenny`), a better generator has to be installed (`[rng-tools](https://www.howtoforge.com/helping-the-random-number-generator-to-gain-enough-entropy-with-rng-tools-debian-lenny)`)
+* If an error related to the lack of entrophy is raised when running `spark-shell` or `pyspark` (`Failed to generate a seed from SecureRandom within 3 seconds. Not enough entrophy?`), a better generator has to be installed ([`rng-tools`](https://www.howtoforge.com/helping-the-random-number-generator-to-gain-enough-entropy-with-rng-tools-debian-lenny)).
 
 ## See also
 * [Running Spark on a YARN cluster](./spark-yarn-cluster-setup.md)

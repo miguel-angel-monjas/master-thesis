@@ -3,18 +3,18 @@ This document is based on [the official Hadoop documentation](https://hadoop.apa
 
 The creation of a Hadoop cluster is an intermediate step in the deployment of a Spark cluster. The main reason to require a Hadoop cluster is the size of the datasets, for which a single instance is not enough.
 
-* [Instance creation](#Instance creation)
-* [Java installation on all instances](#Java installation on all instances)
-* [Hadoop installation on all the instances](#Hadoop installation on all the instances)
-* [Hadoop environment variables setup on master and slave nodes](#Hadoop environment variables setup on master and slave nodes)
-* [*ssh* installation on all instances](#ssh installation on all instances)
-* [`/etc/hosts` update in all instances](#/etc/hosts update in all instances)
-* [Cluster instances configuration](#Cluster instances configuration)
-* [Password-less *ssh* setup](#Password-less ssh setup)
-* [HDFS filesystem format via the *NameNode*](#HDFS filesystem format via the NameNode)
-* [Distributed File System start and stop](#Distributed File System start and stop)
-* [Key take-aways](#Key take-aways)
-* [See also](#See also)
+* [Instance creation](#instance-creation)
+* [Java installation on all instances](#java-installation-on-all-instances)
+* [Hadoop installation on all the instances](#hadoop-installation-on-all-the-instances)
+* [Hadoop environment variables setup on master and slave nodes](#hadoop-environment-variables-setup-on-master-and-slave-nodes)
+* [*ssh* installation on all instances](#ssh-installation-on-all-instances)
+* [`/etc/hosts` update in all instances](#etchosts-update-in-all-instances)
+* [Cluster instances configuration](#cluster-instances-configuration)
+* [Password-less *ssh* setup](#password-less-ssh-setup)
+* [HDFS filesystem format via the *NameNode*](#hdfs-filesystem-format-via-the-namenode)
+* [Distributed File System start and stop](#distributed-file-system-start-and-stop)
+* [Key take-aways](#key-take-aways)
+* [See also](#see-also)
 
 ----
 

@@ -1,6 +1,13 @@
 # Deploying YARN on a Hadoop cluster
 In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how to set up a Hadoop cluster was provided. It is made of a master node (hosting an HDFS *NameNode* and a HDFS "DataNode") and two slaves (running each an HDFS *DataNode*). Here you have a description on how to deploy YARN on top of it.
 
+* [Cluster instances configurations](#cluster-instances-configurations)
+* [YARN start and stop](#yarn-start-and-stop)
+* [Key take-aways](#key-take-aways)
+* [See also](#see-also)
+
+----
+
 ## Cluster instances configurations
 Assuming that the HDFS cluster is already running, two additional files have to be updated (or created) on master and slave instances in order to deploy YARN on the cluster: `mapred-site.xml` and `yarn-site.xml` (mind that some variables have been deprecated as new versions of Hadoop come out). As with the HDFS cluster, the files are in the directory `$HADOOP_CONF_DIR`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
 
@@ -91,7 +98,7 @@ It is important to note that specific values must be set for the properties `yar
 
 Although not followed, [the official Cloudera documentation on YARN tuning](https://www.cloudera.com/documentation/enterprise/5-3-x/topics/cdh_ig_yarn_tuning.html) can provide an overview of the optimization of YARN clusters. In fact, if proper values of the properties above are not set, *NodeManagers* will not be authorized to register and the cluster will not be deployed.
 
-## YARN start
+## YARN start and stop
 Start YARN once the Distributed File System has been already started:
 
 ```bash
