@@ -172,7 +172,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>
 ```
 
 ### `hdfs-site.xml`
-`hdfs-site.xml` must be updated on master and slave nodes in order to activate the properties `dfs.replication`, `dfs.namenode.name.dir`, and `dfs.datanode.name.dir`. It also sets several properties to enable the instances to listen on all interfaces (otherwise, the instances will not be able to connect to each other). See the [official guidelines for HDFS multihoming environments](https://hadoop.apache.org/docs/r2.8.0/hadoop-project-dist/hadoop-hdfs/HdfsMultihoming.html#Ensuring_HDFS_Daemons_Bind_All_Interfaces). Default values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml):
+`hdfs-site.xml` must be updated on master and slave nodes in order to activate the properties `dfs.replication`, `dfs.namenode.name.dir`, and `dfs.datanode.name.dir`. Default values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml):
 ```bash
 echo '<?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
@@ -261,7 +261,7 @@ $HADOOP_HOME/sbin/stop-dfs.sh
 
 ## Key take-aways
 Works such as *Spark in action* (Manning, 2017) state that "The installation [of YARN and Hadoop] is straightforward", but depending on the environment it can be not totally true. The main issues addressed when setting up the Hadoop cluster in the considered scenario (OpenStack cloud with Ubuntu 16.04 instances) are the following ones:
-* private IP addresses must be used to refer to the cluster instances in the configuration files. If floating IP addresses are used, it will be not possible to connect any instance to each other (it is possible to override this behavior by setting the properties `*-bind-host` en `hdfs-site.xml` to 0.0.0.0, but this kind of configuration is not possible in Spark).
+* private IP addresses must be used to refer to the cluster instances in the configuration files. If floating IP addresses are used, it will be not possible to connect any instance to each other. It is possible to override this behavior by setting the properties `*-bind-host` en `hdfs-site.xml` to 0.0.0.0 (see the [official guidelines for HDFS multihoming environments](https://hadoop.apache.org/docs/r2.8.0/hadoop-project-dist/hadoop-hdfs/HdfsMultihoming.html#Ensuring_HDFS_Daemons_Bind_All_Interfaces)), but this kind of configuration is not possible in Spark.
 * password-less ssh is easy to implement provided that it is possible copy the public keys to all the slave instances. As an OpenStack cloud that follows exactly the same principle is used, uploading a suitable key to the slaves can be tricky. The second alternative described above (using a specific pair of keys for enabling cluster communication) is recommended as it exposes the cloud master key just for a while.
 
 ## See also
