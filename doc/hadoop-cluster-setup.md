@@ -19,7 +19,7 @@ The creation of a Hadoop cluster is an intermediate step in the deployment of a 
 ----
 
 ## Instance creation
-Three instances are created in the OpenStack cloud: the following hostnames will be assigned `cluster-master`, `cluster-slave-1` and `cluster-slave-2`. The image used is Ubuntu 16.04 and the flavor (`Spark-Intensive`) has the following features:
+Three instances are created in the Openstack cloud: the following hostnames will be assigned `cluster-master`, `cluster-slave-1` and `cluster-slave-2`. The image used is Ubuntu 16.04 and the flavor (`Spark-Intensive`) has the following features:
 * **Memory**: 32 GB
 * **vCPU**: 32
 
@@ -65,8 +65,6 @@ Next, the following environment variables are set in the `.bashrc` file under `/
 echo '
 # Set HADOOP_HOME
 export HADOOP_HOME=/usr/local/hadoop
-# Set HADOOP_CONF_DIR
-export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
 # Set $HADOOP_LOG_DIR
 export HADOOP_LOG_DIR=$HADOOP_HOME/logs
 # Set JAVA_HOME 
@@ -84,7 +82,7 @@ source ~/.bashrc
 Finally, the `$JAVA_HOME` variable is updated in the `hadoop_env.sh` configuration file on master and slave nodes:
 
 ```bash
-sed -i 's/export JAVA_HOME=${JAVA_HOME}/#export JAVA_HOME=${JAVA_HOME}\nexport JAVA_HOME=$(readlink -f \/usr\/bin\/java | sed "s:bin\/java::")/' $HADOOP_CONF_DIR/hadoop-env.sh
+sed -i 's/export JAVA_HOME=${JAVA_HOME}/#export JAVA_HOME=${JAVA_HOME}\nexport JAVA_HOME=$(readlink -f \/usr\/bin\/java | sed "s:bin\/java::")/' $HADOOP_HOME/etc/hadoop/hadoop-env.sh
 ```
 
 ## ssh installation on all instances
@@ -106,7 +104,7 @@ echo "
 
 ## Password-less ssh setup
 ### Option 1: the lazy (and insecure way)
-Enabling password-less ssh connection between the instances can be tricky, as connections to the instances in the OpenStack cloud cannot be done but using password-less ssh with the private key used to deploy the instances (named `lab`). That is, any instance in the considered OpenStack cloud already accepts ssh connections from clients with the `lab` private key. Thus, making the private key available in the master note would be enough (if unsure about security, mind that any user able to connect to any OpenStack instance already have the private key).
+Enabling password-less ssh connection between the instances can be tricky, as connections to the instances in the Openstack cloud cannot be done but using password-less ssh with the private key used to deploy the instances (named `lab`). That is, any instance in the considered Openstack cloud already accepts ssh connections from clients with the `lab` private key. Thus, making the private key available in the master note would be enough (if unsure about security, mind that any user able to connect to any Openstack instance already have the private key).
 
 Thus, the simplest way to enable the ssh connection is simply to copy the `lab` key (with OpenSSH format) to the `/home/ubuntu/.ssh` folder in the master node (using any secure FTP client). As you were using PuTTY to handle connections, a private key with proper OpenSSH format would have to be obtained from `lab.ppk`. It can be done by means of PuTTYgen, by loading the private key and exporting it as an OpenSSH key. The resulting private key will be named `id_rsa` and subsequently uploaded to the master instance.
 
@@ -176,7 +174,7 @@ ssh -o StrictHostKeyChecking=no cluster-slave-2
 ```
 
 ## Cluster instances configuration
-Three configuration files have to be updated on master and slave instances in order to have the cluster configured: `core-site.xml`, `hdfs-site.xml`, and `slaves` (mind that some variables have been deprecated as new versions of Hadoop come out, be aware of that). They are available in the directory `$HADOOP_CONF_DIR`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
+Three configuration files have to be updated on master and slave instances in order to have the cluster configured: `core-site.xml`, `hdfs-site.xml`, and `slaves` (mind that some variables have been deprecated as new versions of Hadoop come out, be aware of that). They are available in the directory `$HADOOP_HOME/etc/hadoop`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
 
 ### `core-site.xml`
 First, `core-site.xml` must be updated on all instances (master and slaves), in order to set the properties `hadoop.tmp.dir` and `fs.defaultFS`:
@@ -196,7 +194,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>
     <description>Use HDFS as file storage engine</description>
   </property>
 </configuration>
-' > $HADOOP_CONF_DIR/core-site.xml
+' > $HADOOP_HOME/etc/hadoop/core-site.xml
 ```
 
 ### `hdfs-site.xml`
@@ -234,7 +232,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>
     </description>
   </property>
 </configuration>
-' > $HADOOP_CONF_DIR/hdfs-site.xml
+' > $HADOOP_HOME/etc/hadoop/hdfs-site.xml
 ```
 
 Some remarks about the variables:
@@ -253,7 +251,7 @@ Finally, the `slaves` file is updated, only on the master node:
 echo "cluster-master
 cluster-slave-1
 cluster-slave-2
-" >> $HADOOP_CONF_DIR/slaves
+" >> $HADOOP_HOME/etc/hadoop/slaves
 ```
 
 ## HDFS filesystem format via the *NameNode*
@@ -268,7 +266,7 @@ Although it is possible to start HDFS and YARN daemons at once, it is better to 
 $HADOOP_HOME/sbin/start-dfs.sh
 ```
 
-To validate it has started successfully, `jps` can be run on the master and slave instances. The output should list `NameNode`, `SecondaryNameNode`, and` DataNode` on the master node:
+To validate it has started successfully, the JVM Process Status tool (`jps` command) can be run on the master and slave instances. The output should list `NameNode`, `SecondaryNameNode`, and` DataNode` on the master node:
 ```bash
 17089 DataNode
 16947 NameNode
@@ -288,11 +286,11 @@ $HADOOP_HOME/sbin/stop-dfs.sh
 ```
 
 ## Key take-aways
-Works such as *Spark in action* (Manning, 2017) state that "The installation [of YARN and Hadoop] is straightforward", but depending on the environment it can be not totally true. The main issues addressed when setting up the Hadoop cluster in the considered scenario (OpenStack cloud with Ubuntu 16.04 instances) are the following ones:
-* private IP addresses must be used to refer to the cluster instances in the configuration files. If floating IP addresses are used, it will be not possible to connect any instance to each other. It is possible to override this behavior by setting the properties `*-bind-host` en `hdfs-site.xml` to 0.0.0.0 (see the [official guidelines for HDFS multihoming environments](https://hadoop.apache.org/docs/r2.8.0/hadoop-project-dist/hadoop-hdfs/HdfsMultihoming.html#Ensuring_HDFS_Daemons_Bind_All_Interfaces)), but this kind of configuration is not possible in Spark.
-* password-less ssh is easy to implement provided that it is possible copy the public keys to all the slave instances. As an OpenStack cloud that follows exactly the same principle is used, uploading a suitable key to the slaves can be tricky. The second alternative described above (using a specific pair of keys for enabling cluster communication) is recommended as it exposes the cloud master key just for a while.
+Works such as *[Spark in action](https://www.manning.com/books/spark-in-action)* (Manning, 2017) state that "The installation [of YARN and Hadoop] is straightforward", but depending on the environment it can be not totally true. The main issues addressed when setting up the Hadoop cluster in the considered scenario (Openstack cloud with Ubuntu 16.04 instances) are the following ones:
+* Private IP addresses must be used to refer to the cluster instances in the configuration files. If floating IP addresses are used, it will be not possible to connect any instance to each other. It is possible to override this behavior by setting the properties `*-bind-host` en `hdfs-site.xml` to 0.0.0.0 (see the [official guidelines for HDFS multihoming environments](https://hadoop.apache.org/docs/r2.8.0/hadoop-project-dist/hadoop-hdfs/HdfsMultihoming.html#Ensuring_HDFS_Daemons_Bind_All_Interfaces)), but this kind of configuration is not possible in Spark.
+* Password-less ssh is easy to implement provided that it is possible copy the public keys to all the slave instances. As an Openstack cloud that follows exactly the same principle is used, uploading a suitable key to the slaves can be tricky. The third alternative described above (creating a new pair of keys out-of-the-box) is recommended as it does not expose the private Openstack cloud key. Using a specific key pair can be used to fully automate the deployment of a Hadoop and/or Spark cluster.
 
 ## See also
-* [Deploying YARN on a Hadoop cluster](./yarn-cluster-setup.md)
-* [Running Spark on a YARN cluster](./spark-yarn-cluster-setup.md)
-* [Running Spark on a standalone cluster](./spark-standalone-cluster-setup.md)
+* [Running a Standalone Spark cluster](doc/spark-standalone-cluster-setup.md)
+* [Deploying YARN on a Hadoop cluster](doc/yarn-cluster-setup.md)
+* [Running a Spark cluster on YARN](doc/spark-yarn-cluster-setup.md)

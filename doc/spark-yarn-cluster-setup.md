@@ -1,5 +1,5 @@
 # Running Spark on a YARN cluster
-In [Deploying YARN on a Hadoop cluster](./yarn-cluster-setup.md) we described how to set up a YARN-enabled Hadoop cluster. It is made of a master node (hosting an HDFS *NameNode* and a YARN *ResourceManager*) and two slaves (running each an HDFS *DataNode* and a YARN *NodeManager*; the master node hosts a *DataNode* and a *NodeManager* as well). Here, we will describe how to set up a Spark cluster with Jupyter Notebook support on the Hadoop cluster.
+In [Deploying YARN on a Hadoop cluster](doc/yarn-cluster-setup.md) a description on how to set up a YARN-enabled Hadoop cluster was provided. The cluster is made of a master node (hosting an HDFS *NameNode* and a YARN *ResourceManager*) and two slaves (running each an HDFS *DataNode* and a YARN *NodeManager*; the master node hosts a *DataNode* and a *NodeManager* as well). Here you have a description on how to set up a Spark cluster with Jupyter Notebook support on the Hadoop cluster.
 
 * [Spark installation on all instances](#spark-installation-on-all-instances)
 * [Setup Spark environment variables on master and slave nodes](#setup-spark-environment-variables-on-master-and-slave-nodes)
@@ -52,5 +52,5 @@ hdsf-slave-2
 ```
 
 ## See also
-* [Setting up a Hadoop cluster](./hadoop-cluster-setup.md)
-* [Deploying YARN on a Hadoop cluster](./yarn-cluster-setup.md)
+* [Setting up a Hadoop cluster](doc/hadoop-cluster-setup.md).
+* [Running a Standalone Spark cluster](doc/spark-standalone-cluster-setup.md).

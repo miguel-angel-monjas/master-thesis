@@ -52,11 +52,36 @@ export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")
 ' >> $SPARK_CONF_DIR/spark-env.sh
 ```
 
-Finally, a not so verbose logging level is configured:
+Finally, logging is configured. Suggestion in **Spark in action** (chapter 2) are followed:
 ```bash
-cp $SPARK_CONF_DIR/log4j.properties.template $SPARK_CONF_DIR/log4j.properties
-sed -i 's/log4j.rootCategory=INFO, console/log4j.rootCategory=WARN, console/' $SPARK_CONF_DIR/log4j.properties
+echo '# set global logging severity to INFO (and upwards: WARN, ERROR, FATAL)
+log4j.rootCategory=INFO, console, file
+
+# console config (restrict only to ERROR and FATAL)
+log4j.appender.console=org.apache.log4j.ConsoleAppender
+log4j.appender.console.target=System.err
+log4j.appender.console.threshold=ERROR
+log4j.appender.console.layout=org.apache.log4j.PatternLayout
+log4j.appender.console.layout.ConversionPattern=%d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n
+
+# file config
+log4j.appender.file=org.apache.log4j.RollingFileAppender
+log4j.appender.file.File=logs/info.log
+log4j.appender.file.MaxFileSize=5MB
+log4j.appender.file.MaxBackupIndex=10
+log4j.appender.file.layout=org.apache.log4j.PatternLayout
+log4j.appender.file.layout.ConversionPattern=%d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n
+
+# Settings to quiet third party logs that are too verbose
+log4j.logger.org.eclipse.jetty=WARN
+log4j.logger.org.eclipse.jetty.util.component.AbstractLifeCycle=ERROR
+log4j.logger.org.apache.spark.repl.SparkIMain$exprTyper=INFO
+log4j.logger.org.apache.spark.repl.SparkILoop$SparkILoopInterpreter=INFO
+log4j.logger.org.apache.spark=WARN
+log4j.logger.org.apache.hadoop=WARN
+' > $SPARK_CONF_DIR/log4j.properties
 ```
+That way, only `spark-shell` errors will be printed in console. The complete log is however available in `$SPARK_HOME/logs/info.log`.
 
 It is possible to determine whether the installation has been right by running the `spark-shell` command. Besides some warnings, the output should be something like this (to exit the Spark shell, type CTRL-D):
 ```bash
@@ -100,7 +125,7 @@ Instead, it is possible start *Master* and *Workers* at the same time:
 $SPARK_HOME/sbin/start-all.sh 
 ``` 
 
-To validate the cluster has been successfully started, `jps` can be run on the master and slave instances. The output should list `Worker` and` Master` on the master node:
+To validate the cluster has been successfully started, the JVM Process Status tool can be run on the master and slave instances. The output should list `Worker` and` Master` on the master node:
 ```bash
 11512 Worker
 10920 Master
@@ -233,7 +258,7 @@ sed -i "s/#c.NotebookApp.ip = 'localhost'/c.NotebookApp.ip = '*'/" ~/.jupyter/ju
 sed -i "s/#c.NotebookApp.open_browser = True/c.NotebookApp.open_browser = False/" ~/.jupyter/jupyter_notebook_config.py
 sed -i "s/#c.NotebookApp.port = 8888/c.NotebookApp.port = 9999/" ~/.jupyter/jupyter_notebook_config.py
 ```
-The configuration above enables a public Notebook server. There is no built-in security and that is acceptable as a private OpenStack cloud is being used. In open environments, the server must be secured with a password and TLS (see [Running a public notebook server](http://jupyter-notebook.readthedocs.io/en/latest/public_server.html#running-a-public-notebook-server)).
+The configuration above enables a public Notebook server. There is no built-in security and that is acceptable as a private Openstack cloud is being used. In open environments, the server must be secured with a password and TLS (see [Running a public notebook server](http://jupyter-notebook.readthedocs.io/en/latest/public_server.html#running-a-public-notebook-server)).
 
 Finally, Spark must be configured to run a notebook when `pyspark` is invoked.
 
@@ -290,4 +315,4 @@ java.lang.IllegalArgumentException: Error while instantiating 'org.apache.spark.
 
 ## See also
 * [Deploying YARN on a Hadoop cluster](doc/yarn-cluster-setup.md)
-* [Running Spark on a YARN cluster](doc/spark-yarn-cluster-setup.md)
+* [Running a Spark cluster on YARN](doc/spark-yarn-cluster-setup.md)

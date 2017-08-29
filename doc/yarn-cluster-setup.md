@@ -1,5 +1,5 @@
 # Deploying YARN on a Hadoop cluster
-In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how to set up a Hadoop cluster was provided. It is made of a master node (hosting an HDFS *NameNode* and a HDFS *DataNode*) and two slaves (running each an HDFS *DataNode*). Here you have a description on how to deploy YARN on top of it.
+In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how to set up a Hadoop cluster was provided. The cluster is made of a master node (hosting an HDFS *NameNode* and a HDFS *DataNode*) and two slaves (running each an HDFS *DataNode*). Here you have a description on how to deploy YARN on top of it.
 
 * [Cluster instances configurations](#cluster-instances-configurations)
 * [YARN start and stop](#yarn-start-and-stop)
@@ -9,10 +9,10 @@ In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how
 ----
 
 ## Cluster instances configurations
-Assuming that the HDFS cluster is already running, two additional files have to be updated (or created) on master and slave instances in order to deploy YARN on the cluster: `mapred-site.xml` and `yarn-site.xml` (mind that some variables have been deprecated as new versions of Hadoop come out). As with the HDFS cluster, the files are in the directory `$HADOOP_CONF_DIR`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
+Assuming that the HDFS cluster [is already running](./hadoop-cluster-setup.md#distributed-file-system-start-and-stop), two additional files have to be updated (or created) on master and slave instances in order to deploy YARN on the cluster: `mapred-site.xml` and `yarn-site.xml` (mind that some variables have been deprecated as new versions of Hadoop come out). As with the HDFS cluster, the files are in the directory `$HADOOP_HOME/etc/hadoop`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
 
 ### `mapred-site.xml`
-`mapred-site.xml` must be created on the master node in order to activate YARN by setting the `mapreduce.framework.name` property. Default property values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml):
+`mapred-site.xml` must be created on the master node in order to activate YARN by setting the value of the `mapreduce.framework.name` property (to `yarn`). Default property values can be found [here](https://hadoop.apache.org/docs/stable/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml):
 ```bash
 echo '<?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
@@ -23,14 +23,14 @@ echo '<?xml version="1.0"?>
     <description>The framework for running mapreduce jobs</description>
   </property>
 </configuration>
-' > $HADOOP_CONF_DIR/mapred-site.xml
+' > $HADOOP_HOME/etc/hadoop/mapred-site.xml
 ```
 
 ### `yarn-site.xml`
 `yarn-site.xml` is the responsible of YARN cluster configuration and must be updated on master and slave nodes in order to:
 * Activate properties related to the *ResourceManager* ports so that the different entities connect properly to each other.
 * Set the property `yarn.nodemanager.aux-services`. 
-* Enable all interfaces are listened to. Otherwise, connection between nodes will not be possible (it follows a similar pattern to plain Hadoop configuration)
+* Enable the ports services are listening to.
 * Dimension the YARN cluster.
 
 The YARN *ResourceManager* implements three different schedulers. At the moment, the default option (*Capacity Scheduler*, configured via `yarn.resourcemanager.scheduler.class`) is kept.
@@ -65,14 +65,6 @@ echo '<?xml version="1.0"?>
     <value>mapreduce_shuffle</value>
   </property>
   <property>
-    <name>yarn.resourcemanager.bind-host</name>
-    <value>0.0.0.0</value>
-  </property>
-  <property>
-    <name>yarn.nodemanager.bind-host</name>
-    <value>0.0.0.0</value>
-  </property>
-  <property>
     <name>yarn.resourcemanager.hostname</name>
     <value>hdfs-master</value>
   </property>
@@ -89,7 +81,7 @@ echo '<?xml version="1.0"?>
     <value>28</value>
   </property> 
 </configuration>
-' > $HADOOP_CONF_DIR/yarn-site.xml
+' > $HADOOP_HOME/etc/hadoop/yarn-site.xml
 ```
 
 It is important to note that specific values must be set for the properties `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`. 
@@ -133,8 +125,7 @@ It is possible to start (and stop) both the DFS and the YARN daemons, by using `
 
 ## Key take-aways
 Some considerations when setting up a Hadoop cluster have been already mentioned. Some of them (binding to all interfaces) apply to the YARN cluster as well. However, new issues arise:
-* you have to carefully dimension the cluster. If you use small flavors, *NodeManagers* will not be able to gather enough resources and will be rejected at registration. Thus, you need to use instances with a certain amount of memory and properly configure `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`.
+* Careful dimensioning of the cluster is required. If small instance flavors are used, *NodeManagers* will not be able to gather enough resources and will be rejected at registration. Thus, it is necessary to use instances with a certain amount of memory and properly configure `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`.
 
 ## See also
-* [Setting up a Hadoop cluster](./hadoop-cluster-setup.md)
-* [Running Spark on a YARN cluster](./spark-yarn-cluster-setup.md)
+* [Running a Spark cluster on YARN](doc/spark-yarn-cluster-setup.md).
