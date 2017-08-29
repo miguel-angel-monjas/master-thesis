@@ -1,5 +1,5 @@
 # Deploying YARN on a Hadoop cluster
-In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how to set up a Hadoop cluster was provided. It is made of a master node (hosting an HDFS *NameNode* and a HDFS "DataNode") and two slaves (running each an HDFS *DataNode*). Here you have a description on how to deploy YARN on top of it.
+In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how to set up a Hadoop cluster was provided. It is made of a master node (hosting an HDFS *NameNode* and a HDFS *DataNode*) and two slaves (running each an HDFS *DataNode*). Here you have a description on how to deploy YARN on top of it.
 
 * [Cluster instances configurations](#cluster-instances-configurations)
 * [YARN start and stop](#yarn-start-and-stop)
@@ -122,7 +122,7 @@ And `NodeManager` on each slave nodes.
 8395 Jps
 ```
 
-The status of the YARN cluster can be verified in http://cluster-master:8088/
+The status of the YARN cluster can be verified in `http://<master-floating-ip-address>:8088/`.
 
 To stop the YARN cluster, simply type:
 ```bash

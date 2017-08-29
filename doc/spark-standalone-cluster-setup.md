@@ -1,5 +1,5 @@
 # Running a Spark cluster in stand-alone mode
-In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how to set up a Hadoop cluster was provided. It is made of a master node (hosting an HDFS *NameNode* and a HDFS "DataNode") and two slaves (running an HDFS *DataNode* each). Here, a description on e how to deploy a Spark cluster in stand-alone mode on top of it is provided. As YARN is not used, no dependencies between the Hadoop and the Spark clusters will exist and Hadoop will simply provide storage capabilities. The official documentation can be accessed [here](https://spark.apache.org/docs/latest/spark-standalone.html).
+In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how to set up a Hadoop cluster was provided. It is made of a master node (hosting an HDFS *NameNode* and a HDFS *DataNode*) and two slaves (running an HDFS *DataNode* each). Here, a description on e how to deploy a Spark cluster in stand-alone mode on top of it is provided. As YARN is not used, no dependencies between the Hadoop and the Spark clusters will exist and Hadoop will simply provide storage capabilities. The official documentation can be accessed [here](https://spark.apache.org/docs/latest/spark-standalone.html).
 
 * [Pre-requisites](#Pre-requisites)
 * [Spark installation on all instances](#spark-installation-on-all-instances)
@@ -272,7 +272,12 @@ And the Notebook server is accessible in `http://<master-floating-ip-address>:99
 
 ![Spark Notebook](./spark-notebook-empty.PNG)
 
+The Notebook server can be terminated by typing CTRL-C.
+
+Next, the Notebook server can be run against the Spark cluster. First, the cluster must be started. Next, the appropriate master is chosen:
 ```bash
+$SPARK_HOME/sbin/start-master.sh
+$SPARK_HOME/sbin/start-slaves.sh 
 pyspark --master spark://<master-ip-address>:7077
 ```
 
@@ -284,5 +289,5 @@ java.lang.IllegalArgumentException: Error while instantiating 'org.apache.spark.
 * If an error related to the lack of entrophy is raised when running `spark-shell` or `pyspark` (`Failed to generate a seed from SecureRandom within 3 seconds. Not enough entrophy?`), a better generator has to be installed ([`rng-tools`](https://www.howtoforge.com/helping-the-random-number-generator-to-gain-enough-entropy-with-rng-tools-debian-lenny)).
 
 ## See also
-* [Running Spark on a YARN cluster](./spark-yarn-cluster-setup.md)
-* [Running Spark on a standalone cluster](./spark-standalone-cluster-setup.md)
+* [Deploying YARN on a Hadoop cluster](doc/yarn-cluster-setup.md)
+* [Running Spark on a YARN cluster](doc/spark-yarn-cluster-setup.md)

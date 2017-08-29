@@ -105,6 +105,7 @@ echo "
 ```
 
 ## Password-less ssh setup
+### Option 1: the lazy (and insecure way)
 Enabling password-less ssh connection between the instances can be tricky, as connections to the instances in the OpenStack cloud cannot be done but using password-less ssh with the private key used to deploy the instances (named `lab`). That is, any instance in the considered OpenStack cloud already accepts ssh connections from clients with the `lab` private key. Thus, making the private key available in the master note would be enough (if unsure about security, mind that any user able to connect to any OpenStack instance already have the private key).
 
 Thus, the simplest way to enable the ssh connection is simply to copy the `lab` key (with OpenSSH format) to the `/home/ubuntu/.ssh` folder in the master node (using any secure FTP client). As you were using PuTTY to handle connections, a private key with proper OpenSSH format would have to be obtained from `lab.ppk`. It can be done by means of PuTTYgen, by loading the private key and exporting it as an OpenSSH key. The resulting private key will be named `id_rsa` and subsequently uploaded to the master instance.
@@ -120,7 +121,8 @@ ssh -o StrictHostKeyChecking=no cluster-slave-1
 ssh -o StrictHostKeyChecking=no cluster-slave-2
 ```
 
-If you do not wish to leave the private key in the master instance, an alternative schema can be used. It uses the cloud private key just to get access to upload a new key to the slave instances. Once done, the cloud private key is removed. First, the procedures to handle the `lab` private key in the master instance described previously (upload and permissions set) are followed. The result will be having a private key with proper permissions in `~/.ssh/id_rsa`.
+### Option 2: the not so insecure way
+If you do not wish to leave the cloud private key in the master instance, an alternative schema can be used. It uses the cloud private key just to get access to upload a new key to the slave instances. Once done, the cloud private key is removed. First, the procedures to handle the `lab` private key in the master instance described previously (upload and permissions set) are followed. The result will be having a private key with proper permissions in `~/.ssh/id_rsa`.
 
 Next, a new pair of public/private keys is generated (mind the new key names in order not to overwrite the existing key). This new key pair will be the one used for subsequent communications between the master and the slave instances:
 ```bash
@@ -141,7 +143,33 @@ mv ~/.ssh/idhdfs_rsa ~/.ssh/id_rsa
 mv ~/.ssh/idhdfs_rsa.pub ~/.ssh/id_rsa.pub
 ```
 
-Verify that seamless ssh connection is enabled by using the commands suggested in the previous alternative:
+Verify that seamless ssh connection is enabled by running the following commands on the master instance:
+```bash
+ssh -o StrictHostKeyChecking=no cluster-slave-1
+ssh -o StrictHostKeyChecking=no cluster-slave-2
+```
+
+### Option 3: the secure way
+It is possible not to expose at all the cloud private key. The procedure is as follows a pair of keys and a proper `authorized_keys` file are created out-of-the-box. For instance, in another instance in the cloud.
+
+First, access to the instance cloud following the usual procedure (that is, password-less). Create a new pair of keys:
+```bash
+cp ~/.ssh/authorized_keys ~/.ssh/authorized_keys_original
+ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+```
+There will be three files in the `~/.ssh/` folder: `id_rsa`, `id_rsa.pub` and `authorized_keys` (besides the old `authorized_keys`). Remove `id_rsa.pub`, as it is no longer necessary. Retrieve the two remaining files (now you can restore the old `~/.ssh/authorized_keys_original`), upload them to the master instance and move them to the `~/.ssh/` folder (replace the file ` ~/.ssh/authorized_keys` with the one it has been uploaded). Set the proper permissions:
+```bash
+chmod 0600 ~/.ssh/id_rsa
+chmod 0600 ~/.ssh/authorized_keys
+```
+
+Upload `authorized_keys` to the slave instances and move it to the `~/.ssh/` folder, replacing the already existing in there. Set the proper permissions:
+```bash
+chmod 0600 ~/.ssh/authorized_keys
+```
+
+Verify that seamless ssh connection is enabled by running the following commands on the master instance:
 ```bash
 ssh -o StrictHostKeyChecking=no cluster-slave-1
 ssh -o StrictHostKeyChecking=no cluster-slave-2
