@@ -65,6 +65,8 @@ Next, the following environment variables are set in the `.bashrc` file under `/
 echo '
 # Set HADOOP_HOME
 export HADOOP_HOME=/usr/local/hadoop
+# Set $HADOOP_CONF_DIR
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
 # Set $HADOOP_LOG_DIR
 export HADOOP_LOG_DIR=$HADOOP_HOME/logs
 # Set JAVA_HOME 
@@ -82,7 +84,7 @@ source ~/.bashrc
 Finally, the `$JAVA_HOME` variable is updated in the `hadoop_env.sh` configuration file on master and slave nodes:
 
 ```bash
-sed -i 's/export JAVA_HOME=${JAVA_HOME}/#export JAVA_HOME=${JAVA_HOME}\nexport JAVA_HOME=$(readlink -f \/usr\/bin\/java | sed "s:bin\/java::")/' $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+sed -i 's/export JAVA_HOME=${JAVA_HOME}/#export JAVA_HOME=${JAVA_HOME}\nexport JAVA_HOME=$(readlink -f \/usr\/bin\/java | sed "s:bin\/java::")/' $HADOOP_CONF_DIR/hadoop-env.sh
 ```
 
 ## ssh installation on all instances
@@ -174,7 +176,7 @@ ssh -o StrictHostKeyChecking=no cluster-slave-2
 ```
 
 ## Cluster instances configuration
-Three configuration files have to be updated on master and slave instances in order to have the cluster configured: `core-site.xml`, `hdfs-site.xml`, and `slaves` (mind that some variables have been deprecated as new versions of Hadoop come out, be aware of that). They are available in the directory `$HADOOP_HOME/etc/hadoop`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
+Three configuration files have to be updated on master and slave instances in order to have the cluster configured: `core-site.xml`, `hdfs-site.xml`, and `slaves` (mind that some variables have been deprecated as new versions of Hadoop come out, be aware of that). They are available in the directory `$HADOOP_CONF_DIR`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
 
 ### `core-site.xml`
 First, `core-site.xml` must be updated on all instances (master and slaves), in order to set the properties `hadoop.tmp.dir` and `fs.defaultFS`:
@@ -194,7 +196,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>
     <description>Use HDFS as file storage engine</description>
   </property>
 </configuration>
-' > $HADOOP_HOME/etc/hadoop/core-site.xml
+' > $HADOOP_CONF_DIR/core-site.xml
 ```
 
 ### `hdfs-site.xml`
@@ -232,7 +234,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>
     </description>
   </property>
 </configuration>
-' > $HADOOP_HOME/etc/hadoop/hdfs-site.xml
+' > $HADOOP_CONF_DIR/hdfs-site.xml
 ```
 
 Some remarks about the variables:
@@ -251,7 +253,7 @@ Finally, the `slaves` file is updated, only on the master node:
 echo "cluster-master
 cluster-slave-1
 cluster-slave-2
-" >> $HADOOP_HOME/etc/hadoop/slaves
+" >> $HADOOP_CONF_DIR/slaves
 ```
 
 ## HDFS filesystem format via the *NameNode*
