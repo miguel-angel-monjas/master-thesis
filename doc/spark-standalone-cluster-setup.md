@@ -23,6 +23,7 @@ A Spark release compatible with Hadoop 2.7.4, [Spark 2.2.0](https://spark.apache
 ```bash
 wget http://d3kbcqa49mib13.cloudfront.net/spark-2.2.0-bin-hadoop2.7.tgz
 tar -zxvf spark-2.2.0-bin-hadoop2.7.tgz
+sudo mkdir -p /opt/sparks
 sudo mv spark-2.2.0-bin-hadoop2.7 /opt/sparks/spark-2.2.0-bin-hadoop2.7
 sudo ln -s /opt/sparks/spark-2.2.0-bin-hadoop2.7 /usr/local/spark
 rm spark-2.2.0-bin-hadoop2.7.tgz
@@ -36,8 +37,8 @@ echo '
 export SPARK_HOME=/usr/local/spark
 # Set SPARK_CONF_DIR
 export SPARK_CONF_DIR=$SPARK_HOME/conf
-# Add Spark bin directory to PATH
-export PATH=$PATH:$SPARK_HOME/bin
+# Add Spark bin and sbin directories to PATH
+export PATH=$PATH:$SPARK_HOME/sbin:$SPARK_HOME/bin
 ' >> ~/.bashrc
 ```
 
@@ -229,7 +230,7 @@ The `.bashrc` file is reloaded:
 source ~/.bashrc
 ```
 
-Verification of that Python 2.7 proper installation can be done by typing `python`. The output should be similar to this:
+Verification of a right Python 2.7 installation can be done by typing `python`. The output should be similar to this:
 ```bash
 Python 2.7.12 |Anaconda custom (64-bit)| (default, Jul  2 2016, 17:42:40)
 [GCC 4.4.7 20120313 (Red Hat 4.4.7-1)] on linux2
