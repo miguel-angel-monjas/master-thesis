@@ -24,7 +24,7 @@ A Spark release compatible with Hadoop 2.7.4, [Spark 2.2.0](https://spark.apache
 wget http://d3kbcqa49mib13.cloudfront.net/spark-2.2.0-bin-hadoop2.7.tgz
 tar -zxvf spark-2.2.0-bin-hadoop2.7.tgz
 sudo mkdir -p /opt/sparks
-sudo mv spark-2.2.0-bin-hadoop2.7 /opt/sparks/spark-2.2.0-bin-hadoop2.7
+sudo mv spark-2.2.0-bin-hadoop2.7 /opt/sparks
 sudo ln -s /opt/sparks/spark-2.2.0-bin-hadoop2.7 /usr/local/spark
 rm spark-2.2.0-bin-hadoop2.7.tgz
 ```
@@ -89,8 +89,9 @@ That way, only `spark-shell` errors will be printed in console. The complete log
 
 From release 2.1.0 onwards, the Spark binaries have been created with built-in Hive support (if not planning to use it, Spark sources can be downloaded and rebuilt with Maven omitting the options `-Phive -Phive-thriftserver`, see [this answer in StackOverflow](https://stackoverflow.com/a/41638505/7618228)). Thus, it always created a `derby.log` file and a `metastore_db` folder in the current directory. The best way to reduce the burden related to Hive is to make them be created in a specific default folder, on the master node ([reference](https://stackoverflow.com/a/44048667/7618228)):
 ```bash
-mkdir /tmp/derby
+mkdir -p /tmp/derby
 chmod 777 /tmp/derby
+cp $SPARK_CONF_DIR/spark-defaults.conf.template $SPARK_CONF_DIR/spark-defaults.conf
 echo "
 spark.driver.extraJavaOptions -Dderby.system.home=/tmp/derby
 " >> $SPARK_CONF_DIR/spark-defaults.conf
@@ -329,5 +330,5 @@ pyspark --master spark://<master-ip-address>:7077
 * As mentioned, the default Hive configuration leads to the creation of a `derby.log` file and a `metastore_db` folder in the location where the shell is run. As mentioned above, a suitable location have to be configured.
 
 ## See also
-* [Deploying YARN on a Hadoop cluster](doc/yarn-cluster-setup.md)
-* [Running a Spark cluster on YARN](doc/spark-yarn-cluster-setup.md)
+* [Deploying YARN on a Hadoop cluster](./yarn-cluster-setup.md)
+* [Running a Spark cluster on YARN](./spark-yarn-cluster-setup.md)

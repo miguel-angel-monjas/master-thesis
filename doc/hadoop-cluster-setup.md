@@ -243,7 +243,9 @@ Some remarks about the variables:
 * `dfs.datanode.name.dir`: Directory is used by *DataNodes* to store its metadata file. Thus, manual creation of the directory om all nodes is required.
 
 ```bash
+rm -r /home/ubuntu/hdfs/namenode
 mkdir -p /home/ubuntu/hdfs/namenode
+rm -r /home/ubuntu/hdfs/datanode
 mkdir -p /home/ubuntu/hdfs/datanode
 ```
 
@@ -293,6 +295,6 @@ Works such as *[Spark in action](https://www.manning.com/books/spark-in-action)*
 * Password-less ssh is easy to implement provided that it is possible copy the public keys to all the slave instances. As an Openstack cloud that follows exactly the same principle is used, uploading a suitable key to the slaves can be tricky. The third alternative described above (creating a new pair of keys out-of-the-box) is recommended as it does not expose the private Openstack cloud key. Using a specific key pair can be used to fully automate the deployment of a Hadoop and/or Spark cluster.
 
 ## See also
-* [Running a Standalone Spark cluster](doc/spark-standalone-cluster-setup.md)
-* [Deploying YARN on a Hadoop cluster](doc/yarn-cluster-setup.md)
-* [Running a Spark cluster on YARN](doc/spark-yarn-cluster-setup.md)
+* [Running a Standalone Spark cluster](./spark-standalone-cluster-setup.md)
+* [Deploying YARN on a Hadoop cluster](./yarn-cluster-setup.md)
+* [Running a Spark cluster on YARN](./spark-yarn-cluster-setup.md)

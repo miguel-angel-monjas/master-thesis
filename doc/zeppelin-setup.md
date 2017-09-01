@@ -33,14 +33,32 @@ The `.bashrc` file is reloaded:
 source ~/.bashrc
 ```
 
-Verification of a right Zeppelin installation can be done by typing `$ZEPPELIN_HOME/bin/zeppelin-daemon.sh start`. Next, go to `http://<zeppelin-node-ip-address>:8080/` with a web browser. The result should be similar to this:
-![Main Zeppelin UI home](./zeppelin-home.PNG)
-
-To stop it, type `$ZEPPELIN_HOME/bin/zeppelin-daemon.sh stop`
-
 ## Additional Zeppelin configuration
-[defaults](https://zeppelin.apache.org/docs/0.7.2/install/configuration.html)
-In `$ZEPPELIN_CONF_DIR/zeppelin-env.sh`
+Zeppelin must be configured to make it seamlessly work with the cluster defined in previous sections:
+* The default port where the Zeppelin notebook is exposed is 8080. It creates a conflict with the Spark cluster UI.
+* Jupyter and Zeppelin notebooks should be saved in the same location.
+* Spark configuration (see [here](https://zeppelin.apache.org/docs/0.7.2/interpreter/spark.html)).
+
+There are several locations where Zeppelin can be configured. One of them is by inserting environment variables in `$ZEPPELIN_CONF_DIR/zeppelin-env.sh` (the file must be created first). Default values can be found [here](https://zeppelin.apache.org/docs/0.7.2/install/configuration.html).
+
+```bash
+cp $ZEPPELIN_CONF_DIR/zeppelin-env.sh.template $ZEPPELIN_CONF_DIR/zeppelin-env.sh
+sed -i "s@# export SPARK_HOME@export SPARK_HOME=$SPARK_HOME@" $ZEPPELIN_CONF_DIR/zeppelin-env.sh
+sed -i "s/# export MASTER=/export MASTER=spark:\/\/cluster-master:7077/" $ZEPPELIN_CONF_DIR/zeppelin-env.sh
+sed -i "s/# export ZEPPELIN_NOTEBOOK_DIR/export ZEPPELIN_NOTEBOOK_DIR=\/home\/ubuntu\/notebooks/" $ZEPPELIN_CONF_DIR/zeppelin-env.sh
+echo "
+# set Hadoop conf dir
+export HADOOP_CONF_DIR=$HADOOP_CONF_DIR
+# set Zeppelin server port
+export ZEPPELIN_PORT=8180
+" >> $ZEPPELIN_CONF_DIR/zeppelin-env.sh
+```
 
 ZEPPELIN_NOTEBOOK_DIR
 ZEPPELIN_PORT 8180
+
+## Notebook start and stop
+Verification of a right Zeppelin installation can be done by typing `$ZEPPELIN_HOME/bin/zeppelin-daemon.sh start`. Next, go to `http://<zeppelin-node-ip-address>:8180/` with a web browser. The result should be similar to this:
+![Main Zeppelin UI home](./zeppelin-home.PNG)
+
+To stop it, type `$ZEPPELIN_HOME/bin/zeppelin-daemon.sh stop`

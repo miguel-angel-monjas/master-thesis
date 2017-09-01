@@ -128,4 +128,4 @@ Some considerations when setting up a Hadoop cluster have been already mentioned
 * Careful dimensioning of the cluster is required. If small instance flavors are used, *NodeManagers* will not be able to gather enough resources and will be rejected at registration. Thus, it is necessary to use instances with a certain amount of memory and properly configure `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`.
 
 ## See also
-* [Running a Spark cluster on YARN](doc/spark-yarn-cluster-setup.md).
+* [Running a Spark cluster on YARN](./spark-yarn-cluster-setup.md).
