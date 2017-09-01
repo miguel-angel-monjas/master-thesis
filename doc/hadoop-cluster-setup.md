@@ -19,11 +19,11 @@ The creation of a Hadoop cluster is an intermediate step in the deployment of a 
 ----
 
 ## Instance creation
-Three instances are created in the Openstack cloud: the following hostnames will be assigned `cluster-master`, `cluster-slave-1` and `cluster-slave-2`. The image used is Ubuntu 16.04 and the flavor (`Spark-Intensive`) has the following features:
+Four instances are created in the Openstack cloud: the following hostnames will be assigned `cluster-master`, `cluster-slave-1` and `cluster-slave-2`. The image used is Ubuntu 16.04 and the flavor (`Spark-Intensive`) has the following features:
 * **Memory**: 32 GB
-* **vCPU**: 32
+* **vCPU**: 16
 
-All of them are given a private IP address, `<master-ip-address>`, `<slave--ip-address>` and `<slave-2-ip-address>`. A floating IP address must be manually assigned to the master instance: `<master-floating-ip-address>` (during setup, slave instances may be also assigned floating ip addresses; they will be removed once the cluster is setup).
+All of them are given a private IP address, `<master-ip-address>`, `<slave--ip-address>`, `<slave-2-ip-address>` and `<slave-3-ip-address>`. A floating IP address must be manually assigned to the master instance: `<master-floating-ip-address>` (during setup, slave instances may be also assigned floating ip addresses; they will be removed once the cluster is setup).
 
 ## Java installation on all instances
 Oracle Java 8 is installed. Some tutorials found on the Internet ([here](http://tecadmin.net/install-oracle-java-8-jdk-8-ubuntu-via-ppa/) and [here](http://stackoverflow.com/questions/19275856/auto-yes-to-the-license-agreement-on-sudo-apt-get-y-install-oracle-java7-instal)) are used:
@@ -101,6 +101,7 @@ echo "
 <master-ip-address>		cluster-master
 <slave-1-ip-address>	cluster-slave-1
 <slave-2-ip-address>	cluster-slave-2
+<slave-3-ip-address>	cluster-slave-3
 " | sudo tee --append /etc/hosts
 ```
 
@@ -119,6 +120,7 @@ Finally, the connection can be tested by using the following command (`StrictHos
 ```bash
 ssh -o StrictHostKeyChecking=no cluster-slave-1
 ssh -o StrictHostKeyChecking=no cluster-slave-2
+ssh -o StrictHostKeyChecking=no cluster-slave-3
 ```
 
 ### Option 2: the not so insecure way
@@ -133,7 +135,7 @@ chmod 0600 ~/.ssh/authorized_keys
 
 Once created, the new public key is uploaded to the slaves by means of `ssh-copy-id`. 
 ```bash
-for x in cluster-slave-1 cluster-slave-2; do ssh-copy-id -i ~/.ssh/idhdfs_rsa.pub $x; done
+for x in cluster-slave-1 cluster-slave-2 cluster-slave-3; do ssh-copy-id -i ~/.ssh/idhdfs_rsa.pub $x; done
 ```
 
 Finally, the `lab` private key (`id_rsa`) is deleted, and the newly-created pair of keys is renamed so that the default key file names are used:
@@ -147,6 +149,7 @@ Verify that seamless ssh connection is enabled by running the following commands
 ```bash
 ssh -o StrictHostKeyChecking=no cluster-slave-1
 ssh -o StrictHostKeyChecking=no cluster-slave-2
+ssh -o StrictHostKeyChecking=no cluster-slave-3
 ```
 
 ### Option 3: the secure way
@@ -173,6 +176,7 @@ Verify that seamless ssh connection is enabled by running the following commands
 ```bash
 ssh -o StrictHostKeyChecking=no cluster-slave-1
 ssh -o StrictHostKeyChecking=no cluster-slave-2
+ssh -o StrictHostKeyChecking=no cluster-slave-3
 ```
 
 ## Cluster instances configuration
@@ -238,7 +242,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>
 ```
 
 Some remarks about the variables:
-* `dfs.replication`: it specifies the default block replication. That is, it defines how many machines a single file should be replicated to before it becomes available. If its value is set to a value higher than the number of available slaves (actually *DataNodes*), there will errors. The default value is 3. As two slaves are available (plus an extra *DataNode* in the master instance), `dfs.replication` is set to 3.
+* `dfs.replication`: it specifies the default block replication. That is, it defines how many machines a single file should be replicated to before it becomes available. If its value is set to a value higher than the number of available slaves (actually *DataNodes*), there will errors. The default value is 3. As three slaves are available, `dfs.replication` is set to 3.
 * `dfs.namenode.name.dir`: Directory is used by the *NameNode* to store its metadata file. Thus, manual creation of the directory on all nodes is required.
 * `dfs.datanode.name.dir`: Directory is used by *DataNodes* to store its metadata file. Thus, manual creation of the directory om all nodes is required.
 
@@ -252,9 +256,9 @@ mkdir -p /home/ubuntu/hdfs/datanode
 ### `slaves`
 Finally, the `slaves` file is updated, only on the master node:
 ```bash
-echo "cluster-master
-cluster-slave-1
+echo "cluster-slave-1
 cluster-slave-2
+cluster-slave-3
 " >> $HADOOP_CONF_DIR/slaves
 ```
 
@@ -270,9 +274,8 @@ Although it is possible to start HDFS and YARN daemons at once, it is better to 
 $HADOOP_HOME/sbin/start-dfs.sh
 ```
 
-To validate it has started successfully, the JVM Process Status tool (`jps` command) can be run on the master and slave instances. The output should list `NameNode`, `SecondaryNameNode`, and` DataNode` on the master node:
+To validate it has started successfully, the JVM Process Status tool (`jps` command) can be run on the master and slave instances. The output should list `NameNode` and `SecondaryNameNode` on the master node:
 ```bash
-17089 DataNode
 16947 NameNode
 17324 SecondaryNameNode
 17470 Jps
@@ -293,8 +296,9 @@ $HADOOP_HOME/sbin/stop-dfs.sh
 Works such as *[Spark in action](https://www.manning.com/books/spark-in-action)* (Manning, 2017) state that "The installation [of YARN and Hadoop] is straightforward", but depending on the environment it can be not totally true. The main issues addressed when setting up the Hadoop cluster in the considered scenario (Openstack cloud with Ubuntu 16.04 instances) are the following ones:
 * Private IP addresses must be used to refer to the cluster instances in the configuration files. If floating IP addresses are used, it will be not possible to connect any instance to each other. It is possible to override this behavior by setting the properties `*-bind-host` en `hdfs-site.xml` to 0.0.0.0 (see the [official guidelines for HDFS multihoming environments](https://hadoop.apache.org/docs/r2.8.0/hadoop-project-dist/hadoop-hdfs/HdfsMultihoming.html#Ensuring_HDFS_Daemons_Bind_All_Interfaces)), but this kind of configuration is not possible in Spark.
 * Password-less ssh is easy to implement provided that it is possible copy the public keys to all the slave instances. As an Openstack cloud that follows exactly the same principle is used, uploading a suitable key to the slaves can be tricky. The third alternative described above (creating a new pair of keys out-of-the-box) is recommended as it does not expose the private Openstack cloud key. Using a specific key pair can be used to fully automate the deployment of a Hadoop and/or Spark cluster.
+* The *NameNode* is a single point of failure in the HDFS cluster. Hosting the *NameNode* and a *DataNode* in the same instance may translate into resource shortage in the *NameNode* and the usual `Name node is in safe mode. Resources are low on NN. Please add or free up more resources then turn off safe mode manually` error message. Although the desployment started initially with a *DataNode* in the master instance, it was finally removed.
 
 ## See also
-* [Running a Standalone Spark cluster](./spark-standalone-cluster-setup.md)
+* [Running a Spark Standalone cluster](./spark-standalone-cluster-setup.md)
 * [Deploying YARN on a Hadoop cluster](./yarn-cluster-setup.md)
 * [Running a Spark cluster on YARN](./spark-yarn-cluster-setup.md)

@@ -1,10 +1,20 @@
-# Installing Zeppelin on a Spark Standalone cluster
-Apache Zeppelin is another web-based Notebook that supports a variety of languages and back-end technologies. It is especially useful the possibility to combine several languages y a same notebook (for instance, `shell` to run HDFS commands and `python` to execute tasks on `pyspark`). However, the last release at the momment to compile this guide ([Zeppelin 0.7.2](https://zeppelin.apache.org/docs/0.7.2/install/install.html)) does not support Spark 2.2.*. Therefore, it is necessary to fall back to an earlier version.
+# Running Zeppelin notebooks on a Spark Standalone cluster
+Apache Zeppelin is another web-based Notebook that supports a variety of languages and back-end technologies. It is especially useful the possibility to combine several languages y a same notebook (for instance, `shell` to run HDFS commands and `python` to execute tasks on `pyspark`). However, the last release at the momment to compile this guide ([Zeppelin 0.7.2](https://zeppelin.apache.org/docs/0.7.2/install/install.html)) does not support Spark 2.2.*. This is the main reason not to use the more recent Spark version.
+
+* [Pre-requisites](#Pre-requisites)
+* [Zeppelin installation](#zeppelin-installation)
+* [Zeppelin environment variables setup](#zeppelin-environment-variables-setup)
+* [Additional Zeppelin configuration](#additional-zeppelin-configuration)
+* [Notebook start and stop](#notebook-start-and-stop)
+* [See also](#see-also)
+
 
 ----
+## Pre-requisites
+Anaconda's Python 2.7 is installed according to the procedure described in [Running Jupyter notebooks on a Spark Standalone cluster](./jupyter-setup.md) on the master and slave instances.
 
 ## Zeppelin installation
-Any instance can be chosen (even one not belonging to the cluster) for Zeppelin installation:
+A node to run Zeppeling must be chosen (belonging or not to the cluster). Zeppelin will be installed in said instance:
 
 ```bash
 wget http://apache.rediris.es/zeppelin/zeppelin-0.7.2/zeppelin-0.7.2-bin-all.tgz
@@ -62,3 +72,6 @@ Verification of a right Zeppelin installation can be done by typing `$ZEPPELIN_H
 ![Main Zeppelin UI home](./zeppelin-home.PNG)
 
 To stop it, type `$ZEPPELIN_HOME/bin/zeppelin-daemon.sh stop`
+
+## See also
+* [Running Jupyter notebooks on a Spark Standalone cluster](./jupyter-setup.md)

@@ -7,7 +7,9 @@ This thesis documents the whole process that has taken out in order to implement
 The following guidelines have been generated:
 1. [Setting up a Hadoop cluster](doc/hadoop-cluster-setup.md).
 2. [Running a Standalone Spark cluster](doc/spark-standalone-cluster-setup.md).
+   1. [Running Jupyter notebooks on a Spark Standalone cluster](./jupyter-setup.md)
+   2. [Running Zeppelin notebooks on a Spark Standalone cluster](./zeppelin-setup.md)
 3. [Deploying YARN on a Hadoop cluster](doc/yarn-cluster-setup.md).
 4. [Running a Spark cluster on YARN](doc/spark-yarn-cluster-setup.md).
 
-Two different types of Spark clusters are described: Standalone and YARN-based. For the first type, sections 1 ([Setting up a Hadoop cluster](doc/hadoop-cluster-setup.md)) and 2 ([Running a Standalone Spark cluster](doc/spark-standalone-cluster-setup.md)) must be read. For the second type, sections 1 ([Setting up a Hadoop cluster](doc/hadoop-cluster-setup.md)), 3 ([Deploying YARN on a Hadoop cluster](doc/yarn-cluster-setup.md)) and 4 ([Running a Spark cluster on YARN](doc/spark-yarn-cluster-setup.md)) are relevant.
+Two different types of Spark clusters are described: Standalone and YARN-based. For the first type, sections 1 ([Setting up a Hadoop cluster](doc/hadoop-cluster-setup.md)) and 2 ([Running a Standalone Spark cluster](doc/spark-standalone-cluster-setup.md)) must be read (including, if wished, the sections for running notebooks). For the second type, sections 1 ([Setting up a Hadoop cluster](doc/hadoop-cluster-setup.md)), 3 ([Deploying YARN on a Hadoop cluster](doc/yarn-cluster-setup.md)) and 4 ([Running a Spark cluster on YARN](doc/spark-yarn-cluster-setup.md)) are relevant.
