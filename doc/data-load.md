@@ -24,7 +24,12 @@ In order to verify that the file has been loaded, the HDFS Web Interface (`http:
 
 ## Data upload to HDFS as parquet files
 
-A similar procedure will be executed for every file the dataset is made of. Next, Spark will be used to retrieve data files from the HDFS cluster and save the content as parquet files. Next, the original files will be deleted, as they are no longer valid:
+A similar procedure will be executed for every file the dataset is made of. Next, Spark will be used to retrieve data files from the HDFS cluster and save the content as parquet files.
+
+![Hadoop Web Interface: parquet file](./hadoop-single-parquet-file.PNG)
+
+
+Next, the original files will be deleted, as they are no longer valid:
 ```bash
 hdfs dfs -rm /data/DWFET_CDR_CELLID_201602.csv
 hdfs dfs -expunge
