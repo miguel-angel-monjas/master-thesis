@@ -1,5 +1,4 @@
-#Environment description
-
+# Environment description
 The project aim to analyze a large amount of data (about 300 GB with about 55 million records) and therefore will require the set up of an HDFS cluster (to handle storage) and a Spark cluster, for processing. Additionally, there will be dedicated instances for visualization (a node hosting an [ELK Stack](https://www.elastic.co/webinars/introduction-elk-stack)) and for running the clients (clients will be based on notebooks): Jupyter and Zeppelin.
 
 * [Instance creation](#instance-creation)
