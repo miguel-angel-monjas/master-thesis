@@ -2,8 +2,8 @@
 [Jupyter Notebook](https://jupyter.org/) is a web-based application initially created for the Python language (but supporting right now many others) that allows creating *notebooks documents* by means of a web browser and executing it by means of a *kernel*. Jupyter Notebooks are ideal means for running `pyspark` applications and therefore will be one of the main choices when carrying out projects like this. The instance where Jupyter is running needn't be the master node or even one of the cluster instances. However, exactly the same Python and Jupyter versions have to be used in both the node where Jupyter is running and the cluster instances.
 
 * [Python installation](#python-installation)
-* [Jupyter Notebook configuration](#jupyter-notebook-installation)
-* [Jupyter Notebook execution](#jupyter-notebook-configuration)
+* [Jupyter Notebook configuration](#jupyter-notebook-configuration)
+* [Jupyter Notebook execution](#jupyter-notebook-execution)
 * [See also](#see-also)
 
 ----

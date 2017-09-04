@@ -1,15 +1,15 @@
 # Setting up a Hadoop cluster
-This document is based on [the official Hadoop documentation](https://hadoop.apache.org/docs/r2.7.2/hadoop-project-dist/hadoop-common/ClusterSetup.html) and [other resources found on the Internet](https://chawlasumit.wordpress.com/2015/03/09/install-a-multi-node-hadoop-cluster-on-ubuntu-14-04/). It is important to note that as new releases come out, some properties become deprecated and old tutorials are no longer valid (see the [list of deprecated properties](https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/DeprecatedProperties.html)).
+This tutorial is based on [the official Hadoop documentation](https://hadoop.apache.org/docs/r2.7.2/hadoop-project-dist/hadoop-common/ClusterSetup.html) and [other resources found on the Internet](https://chawlasumit.wordpress.com/2015/03/09/install-a-multi-node-hadoop-cluster-on-ubuntu-14-04/). It is important to note that as new releases come out, some properties become deprecated and old tutorials are no longer entirely valid (see the [list of deprecated properties](https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/DeprecatedProperties.html)).
 
-The creation of a Hadoop cluster is an intermediate step in the deployment of a Spark cluster. The main reason to require a Hadoop cluster is the size of the datasets, for which a single instance is not enough.
+This tutorial assumes that [several instances have been created on an Openstack cloud](doc/environment-description.md). No specific dependencies to this type of cloud (beyond the handling of private/public -floating- IP addresses) have been detected so that the procedures should provide relevant information for setting up a cluster in many environments.
 
-* [Instance creation](#instance-creation)
+* [Components of the cluster](#components-of-the-cluster)
 * [Java installation on all instances](#java-installation-on-all-instances)
 * [Hadoop installation on all the instances](#hadoop-installation-on-all-the-instances)
 * [Hadoop environment variables setup on master and slave nodes](#hadoop-environment-variables-setup-on-master-and-slave-nodes)
 * [*ssh* installation on all instances](#ssh-installation-on-all-instances)
 * [`/etc/hosts` update in all instances](#etchosts-update-in-all-instances)
-* [Cluster instances configuration](#cluster-instances-configuration)
+* [Cluster instances configuration](#instance-configuration)
 * [Password-less *ssh* setup](#password-less-ssh-setup)
 * [HDFS filesystem format via the *NameNode*](#hdfs-filesystem-format-via-the-namenode)
 * [Distributed File System start and stop](#distributed-file-system-start-and-stop)
@@ -18,15 +18,11 @@ The creation of a Hadoop cluster is an intermediate step in the deployment of a 
 
 ----
 
-## Instance creation
-Four instances are created in the Openstack cloud: the following hostnames will be assigned `cluster-master`, `cluster-slave-1` and `cluster-slave-2`. The image used is Ubuntu 16.04 and the flavor (`Spark-Intensive`) has the following features:
-* **Memory**: 32 GB
-* **vCPU**: 16
-
-All of them are given a private IP address, `<master-ip-address>`, `<slave--ip-address>`, `<slave-2-ip-address>` and `<slave-3-ip-address>`. A floating IP address must be manually assigned to the master instance: `<master-floating-ip-address>` (during setup, slave instances may be also assigned floating ip addresses; they will be removed once the cluster is setup).
+## Components of the cluster
+The HDFS cluster will be made of four nodes: one master (`cluster-master`) and three slaves (`cluster-slave-1`, `cluster-slave-2` and `cluster-slave-3`). Slaves will run a *DataNode* each, while only a *NameNode* will run on the master node (initial configurations deployed also a *DataNode* in the master node, but this configuration did not work as the *NameNode* run out of resources frequently (see [Key take-aways](#key-take-aways)).
 
 ## Java installation on all instances
-Oracle Java 8 is installed. Some tutorials found on the Internet ([here](http://tecadmin.net/install-oracle-java-8-jdk-8-ubuntu-via-ppa/) and [here](http://stackoverflow.com/questions/19275856/auto-yes-to-the-license-agreement-on-sudo-apt-get-y-install-oracle-java7-instal)) are used:
+Java must be installed in all the cluster instances: Oracle Java 8 has been chosen (some tutorials found on the Internet, such as [this](http://tecadmin.net/install-oracle-java-8-jdk-8-ubuntu-via-ppa/) and [this](http://stackoverflow.com/questions/19275856/auto-yes-to-the-license-agreement-on-sudo-apt-get-y-install-oracle-java7-instal)) are used):
 
 ```bash
 sudo apt-get update
@@ -38,7 +34,7 @@ sudo apt-get install -y oracle-java8-installer
 sudo apt-get install -y oracle-java8-set-default
 ```
 
-Verification of Java installacion can be done by typing `java -version`. The output must be something like this:
+Verification of a successful Java installacion can be done by typing `java -version` in the console. The output must be something like this:
 ```bash
 java version "1.8.0_144"
 Java(TM) SE Runtime Environment (build 1.8.0_144-b01)
@@ -46,7 +42,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.144-b01, mixed mode)
 ```
 
 ## Hadoop installation on all the instances
-[Hadoop 2.7.4](http://hadoop.apache.org/docs/r2.7.4/) is chosen:
+Hadoop is needed to create an HDFS cluster: [Hadoop 2.7.4](http://hadoop.apache.org/docs/r2.7.4/) will be used.
 ```bash
 wget http://ftp.cixug.es/apache/hadoop/common/hadoop-2.7.4/hadoop-2.7.4.tar.gz
 tar -xvzf hadoop-2.7.4.tar.gz
@@ -55,7 +51,7 @@ rm hadoop-2.7.4.tar.gz
 ```
 
 ## Hadoop environment variables setup on master and slave nodes
-In order to determine the actual Java home, the following command is used:
+In order to determine the actual Java home, the following command can be used:
 ```bash
 readlink -f /usr/bin/java | sed "s:bin/java::"
 ```
@@ -76,12 +72,12 @@ export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
 ' >> ~/.bashrc
 ```
 
-The `.bashrc` file is reloaded:
+Once updated, the `.bashrc` file must be reloaded:
 ```bash
 source ~/.bashrc
 ```
 
-Finally, the `$JAVA_HOME` variable is updated in the `hadoop_env.sh` configuration file on master and slave nodes:
+Finally, the `$JAVA_HOME` variable has to be updated in the `hadoop_env.sh` configuration file on master and slave nodes:
 
 ```bash
 sed -i 's/export JAVA_HOME=${JAVA_HOME}/#export JAVA_HOME=${JAVA_HOME}\nexport JAVA_HOME=$(readlink -f \/usr\/bin\/java | sed "s:bin\/java::")/' $HADOOP_CONF_DIR/hadoop-env.sh
@@ -94,7 +90,7 @@ sudo apt-get install ssh -y
 ```
 
 ## /etc/hosts update in all instances
-Here it is important to note that private IP addreses must be used (no floating IP addresses are involved here).
+Here it is important to note that private IP addreses must be used in this file (no floating IP addresses are involved here).
 
 ```bash
 echo "
@@ -124,7 +120,7 @@ ssh -o StrictHostKeyChecking=no cluster-slave-3
 ```
 
 ### Option 2: the not so insecure way
-If you do not wish to leave the cloud private key in the master instance, an alternative schema can be used. It uses the cloud private key just to get access to upload a new key to the slave instances. Once done, the cloud private key is removed. First, the procedures to handle the `lab` private key in the master instance described previously (upload and permissions set) are followed. The result will be having a private key with proper permissions in `~/.ssh/id_rsa`.
+If leaving the cloud private key in the master instance is not acceptable, an alternative schema can be used. It uses the cloud private key just to get access to upload a new key to the slave instances. Once done, the cloud private key is removed. First, the procedures to handle the `lab` private key in the master instance described previously (upload and permissions set) are followed. The result will be having a private key with proper permissions in `~/.ssh/id_rsa`.
 
 Next, a new pair of public/private keys is generated (mind the new key names in order not to overwrite the existing key). This new key pair will be the one used for subsequent communications between the master and the slave instances:
 ```bash
@@ -179,7 +175,7 @@ ssh -o StrictHostKeyChecking=no cluster-slave-2
 ssh -o StrictHostKeyChecking=no cluster-slave-3
 ```
 
-## Cluster instances configuration
+## Instance configuration
 Three configuration files have to be updated on master and slave instances in order to have the cluster configured: `core-site.xml`, `hdfs-site.xml`, and `slaves` (mind that some variables have been deprecated as new versions of Hadoop come out, be aware of that). They are available in the directory `$HADOOP_CONF_DIR`. Although there are some options that are only relevant for the master, it is simpler to copy the same configuration files to all the instances in the cluster.
 
 ### `core-site.xml`
@@ -192,12 +188,10 @@ echo '<?xml version="1.0" encoding="UTF-8"?>
   <property>
     <name>hadoop.tmp.dir</name>
     <value>file:///usr/local/hadoop/tmp</value>
-    <description>Temporary Directory.</description>
   </property>
   <property>
     <name>fs.defaultFS</name>
      <value>hdfs://cluster-master:9000</value>
-    <description>Use HDFS as file storage engine</description>
   </property>
 </configuration>
 ' > $HADOOP_CONF_DIR/core-site.xml
@@ -212,30 +206,14 @@ echo '<?xml version="1.0" encoding="UTF-8"?>
   <property>
   <name>dfs.replication</name>
     <value>3</value>
-    <description>Default block replication.
-    The actual number of replications can be specified when the 
-    file is created. The default is used if replication is not 
-    specified in create time.
-    </description>
   </property>
   <property>
     <name>dfs.namenode.name.dir</name>
     <value>file:///home/ubuntu/hdfs/namenode</value>
-    <description>Determines where on the local filesystem the DFS 
-    name node should store the name table(fsimage). If this is a 
-    comma-delimited list of directories then the name table is 
-    replicated in all of the directories, for redundancy.
-    </description>
   </property>
   <property>
     <name>dfs.datanode.data.dir</name>
     <value>file:///home/ubuntu/hdfs/datanode</value>
-    <description>Determines where on the local filesystem an DFS data 
-    node should store its blocks. If this is a comma-delimited list 
-    of directories, then data will be stored in all named 
-    directories, typically on different devices. Directories that do 
-    not exist are ignored.
-    </description>
   </property>
 </configuration>
 ' > $HADOOP_CONF_DIR/hdfs-site.xml
@@ -285,12 +263,24 @@ And a `DataNode` in each slave instance.
 
 If this output is not got on all the instances of the cluster, it is necessary to analyze the log files available at `HADOOP_LOG_DIR`. Relevant log files are `hadoop-ubuntu-datanode-cluster-master.log`, `hadoop-ubuntu-namenode-cluster-master.log`, and `hadoop-ubuntu-secondarynamenode-cluster-master.log`.
 
-The status of the HDFS cluster can be verified in `http://<master-floating-ip-address>:50070/`
+The status of the HDFS cluster can be verified in the [HDFS Web Interface](https://hadoop.apache.org/docs/r2.7.4/hadoop-project-dist/hadoop-hdfs/HdfsUserGuide.html#Web_Interface) at `http://<master-floating-ip-address>:50070/`.
 
 To stop the HDFS cluster, simply type:
 ```bash
 $HADOOP_HOME/sbin/stop-dfs.sh
 ```
+
+## Data load
+Once the HDFS cluster is running, it is possible to upload data to it by using the [HDFS File System (FS) shell](https://hadoop.apache.org/docs/r2.7.4/hadoop-project-dist/hadoop-common/FileSystemShell.html). For instance, once a file (`DWFET_CDR_CELLID_201602.csv`) has been uploaded to the master node, it is stored in HDFS:
+```bash
+hdfs dfs -mkdir /data
+hdfs dfs -put DWFET_CDR_CELLID_201602.csv /data
+```
+In order to verify that the file has been loaded, the HDFS Web Interface (`http://<master-floating-ip-address>:50070/` > Utilities > Browse the file system) can be used:
+
+![Hadoop Web Interface: uploaded file](./hadoop-single-file.PNG)
+
+The whole data load process is described in [Data load](./data-load.md).
 
 ## Key take-aways
 Works such as *[Spark in action](https://www.manning.com/books/spark-in-action)* (Manning, 2017) state that "The installation [of YARN and Hadoop] is straightforward", but depending on the environment it can be not totally true. The main issues addressed when setting up the Hadoop cluster in the considered scenario (Openstack cloud with Ubuntu 16.04 instances) are the following ones:

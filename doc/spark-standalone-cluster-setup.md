@@ -1,7 +1,7 @@
 # Running a Spark cluster in Standalone mode
 In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how to set up a Hadoop cluster was provided. It is made of a master node (hosting an HDFS *NameNode*) and three slaves (running an HDFS *DataNode* each). Here, a description on e how to deploy a Spark cluster in Standalone mode on top of it is provided. As YARN is not used, no dependencies between the Hadoop and the Spark clusters will exist and Hadoop will simply provide storage capabilities. The official documentation can be accessed [here](https://spark.apache.org/docs/latest/spark-standalone.html).
 
-* [Pre-requisites](#Pre-requisites)
+* [Pre-requisites](#pre-requisites)
 * [Spark installation on all instances](#spark-installation-on-all-instances)
 * [Spark environment variables setup on master and slave nodes](#spark-environment-variables-setup-on-master-and-slave-nodes)
 * [Additional Spark configuration](#additional-spark-configuration)
