@@ -18,12 +18,18 @@ sudo chown -R ubuntu:ubuntu /usr/local/anaconda/
 rm Anaconda2-4.2.0-Linux-x86_64.sh
 /usr/local/anaconda/bin/conda update -y conda
 ```
-Additionally, [`findspark`](https://github.com/minrk/findspark) is installed and a configuration file for Jupyter Notebook is created.
+Additionally, although not actually needed in the chosen configuration, [`findspark`](https://github.com/minrk/findspark) is installed (`findspark` is a Python module that allows to call `pyspark` from Python scripts; as we plan to trigger notebook execution by running the `pyspark` command, it is not actually needed).
 
 ```bash
 /usr/local/anaconda/bin/conda install -c conda-forge findspark -y
+```
+Finally, a configuration file for Jupyter Notebook is created (the file is needed for enabling access to the notebook server, see [Jupyter Notebook execution](#jupyter-notebook-execution)):
+
+```bash
 /usr/local/anaconda/bin/jupyter notebook --generate-config -y
 ```
+
+As a result, `~/.jupyter/jupyter_notebook_config.py` is created.
 
 Next, the following environment variables must be set in the `.bashrc` file under `/home/ubuntu` (both on master and slave nodes):
 ```bash
