@@ -16,17 +16,17 @@ wget https://repo.continuum.io/archive/Anaconda2-4.2.0-Linux-x86_64.sh
 sudo /bin/bash Anaconda2-4.2.0-Linux-x86_64.sh -b -p /usr/local/anaconda
 sudo chown -R ubuntu:ubuntu /usr/local/anaconda/
 rm Anaconda2-4.2.0-Linux-x86_64.sh
-/usr/local/anaconda/bin/conda update -y conda
+sudo /usr/local/anaconda/bin/conda update -y conda
 ```
 Additionally, although not actually needed in the chosen configuration, [`findspark`](https://github.com/minrk/findspark) is installed (`findspark` is a Python module that allows to call `pyspark` from Python scripts; as we plan to trigger notebook execution by running the `pyspark` command, it is not actually needed).
 
 ```bash
-/usr/local/anaconda/bin/conda install -c conda-forge findspark -y
+sudo /usr/local/anaconda/bin/conda install -c conda-forge findspark -y
 ```
 Finally, a configuration file for Jupyter Notebook is created (the file is needed for enabling access to the notebook server, see [Jupyter Notebook execution](#jupyter-notebook-execution)):
 
 ```bash
-/usr/local/anaconda/bin/jupyter notebook --generate-config -y
+sudo /usr/local/anaconda/bin/jupyter notebook --generate-config -y
 ```
 
 As a result, `~/.jupyter/jupyter_notebook_config.py` is created.
@@ -98,6 +98,9 @@ Finally, Spark must be configured to run a notebook when `pyspark` is invoked.
 
 ```bash
 echo '
+export ANACONDA_HOME=/usr/local/anaconda
+
+export PYSPARK_PYTHON=$ANACONDA_HOME/bin/python
 export PYSPARK_DRIVER_PYTHON=jupyter
 export PYSPARK_DRIVER_PYTHON_OPTS="notebook"
 ' >> $SPARK_CONF_DIR/spark-env.sh
@@ -128,7 +131,7 @@ The execution of Jupyter Notebook is triggered when `pyspark` is run: an output 
 [I 15:44:57.738 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
 ```
 
-At the same the Jupyter Notebook server is accessible in `http://<master-floating-ip-address>:9999/`:
+At the same time, the Jupyter Notebook server is accessible in `http://<master-floating-ip-address>:9999/`:
 
 ![Spark Notebook](./spark-notebook-empty.PNG)
 
