@@ -18,10 +18,15 @@ sudo chown -R ubuntu:ubuntu /usr/local/anaconda/
 rm Anaconda2-4.2.0-Linux-x86_64.sh
 sudo /usr/local/anaconda/bin/conda update -y conda
 ```
-Additionally, although not actually needed in the chosen configuration, [`findspark`](https://github.com/minrk/findspark) is installed (`findspark` is a Python module that allows to call `pyspark` from Python scripts; as we plan to trigger notebook execution by running the `pyspark` command, it is not actually needed).
+Additionally, we install several Python packages:
+* Although not actually needed in the chosen configuration, [`findspark`](https://github.com/minrk/findspark) is installed (`findspark` is a Python module that allows to call `pyspark` from Python scripts; as we plan to trigger notebook execution by running the `pyspark` command, it is not actually needed).
+* In order to enhance visualization, `seaborn` can be installed as well.
 
 ```bash
 sudo /usr/local/anaconda/bin/conda install -c conda-forge findspark -y
+sudo /usr/local/anaconda/bin/conda install -c anaconda seaborn -y
+sudo /usr/local/anaconda/bin/conda install -c anaconda-nb-extensions nbbrowserpdf -y
+
 ```
 Finally, a configuration file for Jupyter Notebook is created (the file is needed for enabling access to the notebook server, see [Jupyter Notebook execution](#jupyter-notebook-execution)):
 
@@ -97,10 +102,7 @@ The configuration above enables a public Notebook server. There is no built-in s
 Finally, Spark must be configured to run a notebook when `pyspark` is invoked.
 
 ```bash
-echo '
-export ANACONDA_HOME=/usr/local/anaconda
-
-export PYSPARK_PYTHON=$ANACONDA_HOME/bin/python
+echo 'export PYSPARK_PYTHON=$ANACONDA_HOME/bin/python
 export PYSPARK_DRIVER_PYTHON=jupyter
 export PYSPARK_DRIVER_PYTHON_OPTS="notebook"
 ' >> $SPARK_CONF_DIR/spark-env.sh
