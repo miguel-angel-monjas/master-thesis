@@ -1,0 +1,12 @@
+xpack.security.enabled: "false"
+xpack.monitoring.enabled: "false"
+xpack.graph.enabled: "false"
+xpack.watcher.enabled: "false"
+
+http.cors.allow-origin: "/.*/"
+http.cors.enabled: true
+
+server.port: 5601
+server.host: 0.0.0.0
+
+elasticsearch.url: http://elasticsearch:9200
