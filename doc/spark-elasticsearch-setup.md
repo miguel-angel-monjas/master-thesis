@@ -29,7 +29,7 @@ sudo pip install --upgrade pip
 sudo pip install docker-compose
 ```
 
-The shell script, `docker_install.sh` is availabe in the `elk` folder in the Github repo. 
+The shell script, `docker_install.sh` is availabe in the `elastic` folder in the Github repo. 
 
 The instance name must be registered in the instances of the HDFS cluster (in the Elastic Stack instance as well) by executing the following command:
 
@@ -67,7 +67,7 @@ mkdir -p /home/ubuntu/elk/logstash/pipeline
 mkdir /home/ubuntu/elk/logstash/input
 ```
 
-The followind YAML file is used by Docker Compose. As with `docker_install.sh`, this `docker-compose.yml` file is available in the `elk` folder in the Github repo
+The followind YAML file is used by Docker Compose. As with `docker_install.sh`, this `docker-compose.yml` file is available in the `elastic` folder in the Github repo:
 ```yaml
 version: '2'
 services:
@@ -96,7 +96,7 @@ services:
     volumes:
       - esdata1:/usr/share/elasticsearch/data
     ports:
-      - 9200:9200
+      - "9200:9200"
   elasticsearch2:
     image: docker.elastic.co/elasticsearch/elasticsearch:5.6.0
     restart: on-failure
@@ -123,6 +123,7 @@ services:
       - esdata2:/usr/share/elasticsearch/data
   kibana:
     image: docker.elastic.co/kibana/kibana:5.6.0
+    container_name: kibana
     volumes:
       - ./kibana.yml:/usr/share/kibana/config/kibana.yml
     ports:
@@ -152,9 +153,11 @@ volumes:
     driver: local
 ```
 
-Storage in Elasticsearch is persistent, as volumes in the host machine, handled by Docker, are used: ```/var/lib/docker/volumes/elk_esdata1/``` and ```/var/lib/docker/volumes/elk_esdata2/```. That is, although the containers are stopped, storage is kept.
+Some aspect to remark:
+* Storage in Elasticsearch is persistent, as two volumes in the host machine, handled by Docker, are used: ```/var/lib/docker/volumes/elk_esdata1/``` and ```/var/lib/docker/volumes/elk_esdata2/```. That is, although the containers are stopped, storage is kept. The volume contents can be erased by removing the volumes (`docker volume rm elk_esdata1` and `docker volume rm elk_esdata2`).
+* Three ports are exposed so that it is possible to interact with the components of the Elastic Stack: 9200 for Elasticsearch, 5601 for Kibana and 5001 for Logstash (that is, `<elk-floating-ip-address>:9200`, `<elk-floating-ip-address>:5601` and `<elk-floating-ip-address>:5001`).
 
-Finally, a `kibana.yml` is needed as well. The following file, also available in the `elk` folder of the Github repo, can be used:
+A `kibana.yml` is needed as well. The following file, also available in the `elastic` folder of the Github repo, can be used:
 ```yaml
 xpack.security.enabled: "false"
 xpack.monitoring.enabled: "false"
@@ -169,7 +172,7 @@ server.host: 0.0.0.0
 
 elasticsearch.url: http://elasticsearch:9200
 ```
-Thus, the folder structure in the host Elastic Stack instance will be as follows (from ```/home/ubuntu```):
+Thus, the folder structure in the Elastic Stack instance will be as follows (from `/home/ubuntu`):
 ```bash
 .
 +-- elk
@@ -180,10 +183,25 @@ Thus, the folder structure in the host Elastic Stack instance will be as follows
         +-- pipeline
 ```
 
-Thus, the Elastic Stack infrastructure can be started by executing the following commands:
+Finally, the Elastic Stack infrastructure can be started by executing the following commands:
 ```bash
 cd /home/ubuntu/elk
 docker-compose up -d
+```
+
+The result should be similar to this:
+```bash
+Creating network "elk_default" with the default driver
+Creating volume "elk_esdata2" with local driver
+Creating volume "elk_esdata1" with local driver
+Creating elk_elasticsearch2_1 ...
+Creating elasticsearch ...
+Creating elk_elasticsearch2_1
+Creating elasticsearch ... done
+Creating kibana ...
+Creating logstash ...
+Creating kibana
+Creating logstash ... done
 ```
 
 ## Elasticsearch index definition

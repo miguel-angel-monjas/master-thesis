@@ -30,7 +30,7 @@ A single instance will be created, with the following hostname: `elk`. The OS us
 * **Memory**: 16 GB
 * **vCPU**: 4
 
-It is also given a private IP address: `<elk-ip-address>`.
+It is given a private IP address: `<elk-ip-address>` and also a flotating IP address, `<elk-floating-ip-address>`. Otherwise, it will not be possible to access Kibana to visualize the information stored in Elasticsearch.
 
 ## See also
 * [Setting up a Hadoop cluster](./hadoop-cluster-setup.md).
