@@ -1,3 +1,6 @@
 [submodule "notebooks"]
 	path = notebooks
 	url = https://github.com/miguel-angel-monjas/master-thesis-notebooks.git
+[submodule "docker-elastic"]
+	path = docker-elastic
+	url = https://github.com/miguel-angel-monjas/docker-elastic.git
