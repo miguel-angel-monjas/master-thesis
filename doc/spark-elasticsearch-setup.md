@@ -52,63 +52,60 @@ sudo sysctl -w vm.max_map_count=262144
 ```
 
 ## Elastic Stack deployment
-As mentioned in the previous section, deployment of the Elastic Stack environment (with two Elasticsearch instances, and one each for Kibana and Logstash) is based on the official Elastic images and in an adaptation of the official Docker Compose files in the [Elastic Github site](https://github.com/elastic/)  (the X-Pack has been disabled according to the [official](https://www.elastic.co/guide/en/x-pack/current/xpack-settings.html) [documentation](https://www.elastic.co/guide/en/x-pack/current/installing-xpack.html#xpack-enabling)). Logstash is installed to enable integration scenarios where the results of Spark processing are not directly written to Elasticsearch but through CSV files. Thus, the following steps have to be followed:
+Deployment of the Elastic Stack environment (with two Elasticsearch instances, and one each for Kibana and Logstash) is based on the [Docker ELK stack distribution by Anthony Lapenna (*deviantony*)](https://github.com/deviantony/docker-elk) and on the [official Elastic documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html) (in order to create a two instance Elasticsearch cluster). A conventient feature of deviantony's distribution is the possibility of configure each service defined in the Docker Compose file. In all of them, the X-Pack has been disabled according to the [official](https://www.elastic.co/guide/en/x-pack/current/xpack-settings.html) [documentation](https://www.elastic.co/guide/en/x-pack/current/installing-xpack.html#xpack-enabling)). Logstash is installed to enable integration scenarios where the results of Spark processing are not directly written to Elasticsearch but through CSV files. Thus, the following steps have to be followed:
 
-A directory for the Docker Compose YAML file and other auxiliary files is created:
-
-```bash
-mkdir /home/ubuntu/elk
-```
-
-Folders for Logstash are created as well (the `pipeline` folder contains the configuration files for Logstash; `input` is created to contain files that can be processed by Logstash):
+The files Docker Compose uses are downloaded by cloning a Github repo:
 
 ```bash
-mkdir -p /home/ubuntu/elk/logstash/pipeline
-mkdir /home/ubuntu/elk/logstash/input
+cd
+git clone https://github.com/miguel-angel-monjas/docker-elastic.git
 ```
 
-The followind YAML file is used by Docker Compose. As with `docker_install.sh`, this `docker-compose.yml` file is available in the `elastic` folder in the Github repo:
+Thus, the folder structure in the Elastic Stack instance will be as follows (from `/home/ubuntu/docker-elastic`):
+```bash
+.
++-- docker-compose.yml
++-- kibana
+¦   +-- config
+¦       +-- kibana.yml
++-- LICENSE
++-- logstash
+    +-- config
+    ¦   +-- logstash.yml
+    +-- input
+    +-- pipeline
+        +-- logstash.conf
+```
+
+The following folders are created:
+* `kibana\config`: folder where the Kibana configuration file, `kibana.yml` is available.
+* `logstash\config`: folder where the Logstash configuration file, `logstash.yml` is available.
+* `logstash\pipeline`: folder where the Logstash pipeline file, `logstash.conf` is available.
+* `logstash\input`: folder where files to be processed by Logstash are placed.
+
+A Docker Compose file, `docker-compose.yml`, is available in the root folder (`/home/ubuntu/docker-elastic`), with the following content:
 ```yaml
 version: '2'
+
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:5.6.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.6.1
     container_name: elasticsearch
-    restart: on-failure
-    environment:
-      - cluster.name=docker-cluster
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
-      - xpack.security.enabled=false
-      - xpack.monitoring.enabled=false
-      - xpack.graph.enabled=false
-      - xpack.watcher.enabled=false
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
-    mem_limit: 2g
-    cap_add:
-      - IPC_LOCK
     volumes:
+      #### Uncomment if specific Elasticsearch configuration is required	
+      # - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - esdata1:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"
-  elasticsearch2:
-    image: docker.elastic.co/elasticsearch/elasticsearch:5.6.0
-    restart: on-failure
+      - "9300:9300"
     environment:
-      - cluster.name=docker-cluster
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
-      - "discovery.zen.ping.unicast.hosts=elasticsearch"
-      - xpack.security.enabled=false
-      - xpack.monitoring.enabled=false
-      - xpack.graph.enabled=false
-      - xpack.watcher.enabled=false
+      ES_JAVA_OPTS: "-Xmx2g -Xms2g"
+      cluster.name: "docker-cluster"
+      bootstrap.memory_lock: "true"
+      xpack.security.enabled: "false"
+      xpack.monitoring.enabled: "false"
+      xpack.ml.enabled: "false"
+      xpack.watcher.enabled: "false"
     ulimits:
       memlock:
         soft: -1
@@ -116,71 +113,109 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-    mem_limit: 2g
+    mem_limit: 1g
     cap_add:
       - IPC_LOCK
+    networks:
+      - elk
+
+  elasticsearch2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.6.1
+    container_name: elasticsearch2
     volumes:
+      #### Uncomment if specific Elasticsearch configuration is required	
+      # - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - esdata2:/usr/share/elasticsearch/data
+    environment:
+      ES_JAVA_OPTS: "-Xmx2g -Xms2g"
+      cluster.name: "docker-cluster"
+      bootstrap.memory_lock: "true"
+      discovery.zen.ping.unicast.hosts: "elasticsearch"
+      xpack.security.enabled: "false"
+      xpack.monitoring.enabled: "false"
+      xpack.ml.enabled: "false"
+      xpack.watcher.enabled: "false"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    mem_limit: 1g
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - elk
+
   kibana:
-    image: docker.elastic.co/kibana/kibana:5.6.0
+    image: docker.elastic.co/kibana/kibana:5.6.1
     container_name: kibana
     volumes:
-      - ./kibana.yml:/usr/share/kibana/config/kibana.yml
+      - ./kibana/config/:/usr/share/kibana/config
     ports:
       - "5601:5601"
+    networks:
+      - elk
     depends_on:
       - elasticsearch
+
   logstash:
-    image: docker.elastic.co/logstash/logstash:5.6.0
+    image: docker.elastic.co/logstash/logstash:5.6.1
     container_name: logstash
     volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
       - ./logstash/pipeline:/usr/share/logstash/pipeline
       - ./logstash/input:/tmp
-    environment:
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
-      - xpack.security.enabled=false
-      - xpack.monitoring.enabled=false
-      - xpack.graph.enabled=false
-      - xpack.watcher.enabled=false
     ports:
       - "5001:5000"
+    environment:
+      LS_JAVA_OPTS: "-Xms1g -Xmx1g"
+    networks:
+      - elk
     depends_on:
       - elasticsearch
+
 volumes:
   esdata1:
     driver: local
   esdata2:
     driver: local
+
+networks:
+   elk:
+      driver: bridge
 ```
 
 Some aspect to remark:
-* Storage in Elasticsearch is persistent, as two volumes in the host machine, handled by Docker, are used: ```/var/lib/docker/volumes/elk_esdata1/``` and ```/var/lib/docker/volumes/elk_esdata2/```. That is, although the containers are stopped, storage is kept. The volume contents can be erased by removing the volumes (`docker volume rm elk_esdata1` and `docker volume rm elk_esdata2`).
+* Storage in the Elasticsearch cluster is persistent, as two volumes in the host machine, handled by Docker, are used: `esdata1` and `esdata2`. That is, although the containers are stopped, storage is kept. The volumes contents can be erased by removing the volumes (`docker volume rm dockerelastic_esdata1` and `docker volume rm dockerelastic_esdata2`).
 * Three ports are exposed so that it is possible to interact with the components of the Elastic Stack: 9200 for Elasticsearch, 5601 for Kibana and 5001 for Logstash (that is, `<elk-floating-ip-address>:9200`, `<elk-floating-ip-address>:5601` and `<elk-floating-ip-address>:5001`).
 
-A `kibana.yml` is needed as well. The following file, also available in the `elastic` folder of the Github repo, can be used:
+A Kibana configuration file, `kibana.yml`, is provided:
 ```yaml
-xpack.security.enabled: "false"
-xpack.monitoring.enabled: "false"
-xpack.graph.enabled: "false"
-xpack.watcher.enabled: "false"
-
-http.cors.allow-origin: "/.*/"
-http.cors.enabled: true
-
+server.name: kibana
 server.port: 5601
 server.host: 0.0.0.0
 
 elasticsearch.url: http://elasticsearch:9200
+
+xpack.security.enabled: false
+xpack.monitoring.enabled: false
+xpack.ml.enabled: false
+xpack.graph.enabled: false
+xpack.reporting.enabled: false
+xpack.grokdebugger.enabled: false
+
+http.cors.allow-origin: "/.*/"
+http.cors.enabled: true
 ```
-Thus, the folder structure in the Elastic Stack instance will be as follows (from `/home/ubuntu`):
-```bash
-.
-+-- elk
-    +-- docker-compose.yml
-    +-- kibana.yml
-    +-- logstash
-        +-- input
-        +-- pipeline
+
+And a Logstash configuration file, `logstash.yml`, is provided:
+```yaml
+http.host: "0.0.0.0"
+path.config: /usr/share/logstash/pipeline
+
+xpack.monitoring.enabled: false
 ```
 
 Finally, the Elastic Stack infrastructure can be started by executing the following commands:
@@ -191,9 +226,9 @@ docker-compose up -d
 
 The result should be similar to this:
 ```bash
-Creating network "elk_default" with the default driver
-Creating volume "elk_esdata2" with local driver
-Creating volume "elk_esdata1" with local driver
+Creating network "dockerelastic_elk" with the default driver
+Creating volume "dockerelastic_esdata2" with local driver
+Creating volume "dockerelastic_esdata1" with local driver
 Creating elk_elasticsearch2_1 ...
 Creating elasticsearch ...
 Creating elk_elasticsearch2_1
@@ -204,6 +239,90 @@ Creating kibana
 Creating logstash ... done
 ```
 
+## Elasticdump installation in the host instance
+In the following sections, different approaches to save the results of Spark computations in Elasticsearch will be provided. One of them is based on `elasticdump`. Its installation in Ubuntu can be troublesome as `elasticdump` relies on `nodejs` and the installation of the latter in the usual way (that is, by running ```sudo apt-get install nodejs npm -y```) ends up in an old `nodejs` release, not able to run `elasticdump`. Based on the official [NodeSource](https://nodesource.com/blog/installing-node-js-tutorial-ubuntu/) and [elasticdump](https://www.npmjs.com/package/elasticdump) documentation:
+
+```bash
+curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash -
+sudo apt-get update
+sudo apt-get install nodejs -y
+sudo npm install npm --global
+sudo npm install elasticdump -g 
+```
+
+Next, the following environment variables are set in the `.bashrc` file under `/home/ubuntu` (both on master and slave nodes):
+```bash
+echo '
+# Add /usr/bin to enable nodejs
+export PATH=$PATH:/usr/bin
+' >> ~/.bashrc
+```
+
+Once updated, the `.bashrc` file must be reloaded:
+```bash
+source ~/.bashrc
+```
+
 ## Elasticsearch index definition
+There are three different approaches to save results of Spark computations in an Elasticsearch index:
+* Save results (as RDD) directly from Spark.
+* Save results as a CSV file and use Logstash to load it to Elasticsearch.
+* Save results as a JSON file and use Elasticdump to load it to Elasticsearch.
+
+Regardless of the approach, it is convenient to create a mapping for the index that will host the data. In our project it is necessary to store a number of timeseries describing each the load of a specific cell of a telecom operator for six months. Thus, each "record" is made of three elements: a *String* identifying the cell, an *Integer* representing a timestamp as seconds after the epoch, and another *Integer* representing the amoung of concurrent connections at the timestamp. Thus, the following mapping can be defined:
+
+```json
+{
+  "cell_info": {
+    "mappings": {
+      "cell_load": {
+        "properties": {
+          "cell": {
+            "type": "string"
+          },
+          "date": {
+            "type": "date"
+          },
+          "load": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+An index, `cell_info`, and a document type, `cell_load`, are defined.
+
+Index creation can be accomplished in different ways: by means of `elasticdump` or by using [Sense](https://chrome.google.com/webstore/detail/sense-beta/lhjgkmllcaadmopgmanpapmpjgmfcfig?hl=en) or the Dev Tools in Kibana.
+
+### Index mapping creation by means of `elasticdump`
+The JSON document provided above is saved as a file, `cell_load_mapping.json` and run the following command is run:
+```bash
+elasticdump --type=mapping --input=./cell_load_mapping.json --output=http://localhost:9200 --output-index=cell_info
+```
+
+### Index mapping creation through the web interface
+```
+PUT cell_info
+{
+    "mappings": {
+      "cell_load": {
+        "properties": {
+          "cell": {
+            "type": "string"
+          },
+          "date": {
+            "type": "date"
+          },
+          "load": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+}
+```
 
 ## Spark configuration

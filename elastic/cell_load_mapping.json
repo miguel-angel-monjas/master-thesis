@@ -1,0 +1,19 @@
+{
+  "cell_info": {
+    "mappings": {
+      "cell_load": {
+        "properties": {
+          "cell": {
+            "type": "string"
+          },
+          "date": {
+            "type": "date"
+          },
+          "load": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  }
+}
