@@ -1,6 +1,15 @@
 # Saving data to Elasticsearch indices
 The [Elastic Stack](https://www.elastic.co/products) (formerly the ELK Stack) is a set of open source tools to search, analyze and visualize data in real time. Although the combination of Jupyter notebooks with `matplotlib` provides a compelling way of showing results, there are situations in which a more powerful tool is required. Thus, the following guidelines will describe how to set up and configure a Elastic Stack instance and how to make it accessible from a Spark Standalone cluster.
 
+* [Pre-requisites](#pre-requisites)
+* [Elastic Stack deployment](#elastic-stack-deployment)
+* [Elasticdump installation in the host instance](#elasticdump-installation-in-the-host-instance)
+* [Elasticsearch index definition](#elasticsearch-index-definition)
+  * [Index mapping creation via elasticdump](#index-mapping-creation-via-elasticdump)
+  * [Index mapping creation via the web interface](#index-mapping-creation-via-the-web-interface)
+* [Elasticsearch connector deployment in the Spark cluster](#elasticsearch-connector-deployment-in-the-spark-cluster)
+* [See also](#see-also)
+
 ----
 ## Pre-requisites
 The deployment of Elastic Stack on an Openstack instance will be carried out by means of Docker containers. Thus, Docker CE and Docker Compose have to be installed before the containers can be created. It can be done by executing a shell script with the following content (taken from the official Docker documentation on [Docker CE](https://docs.docker.com/engine/installation/linux/ubuntu/) and [Docker Compose](https://docs.docker.com/compose/install/)):
@@ -66,12 +75,12 @@ Thus, the folder structure in the Elastic Stack instance will be as follows (fro
 .
 +-- docker-compose.yml
 +-- kibana
-¦   +-- config
-¦       +-- kibana.yml
+    +-- config
+        +-- kibana.yml
 +-- LICENSE
 +-- logstash
     +-- config
-    ¦   +-- logstash.yml
+        +-- logstash.yml
     +-- input
     +-- pipeline
         +-- logstash.conf
@@ -297,13 +306,13 @@ An index, `cell_info`, and a document type, `cell_load`, are defined.
 
 Index creation can be accomplished in different ways: by means of `elasticdump` or by using [Sense](https://chrome.google.com/webstore/detail/sense-beta/lhjgkmllcaadmopgmanpapmpjgmfcfig?hl=en) or the Dev Tools in Kibana.
 
-### Index mapping creation by means of `elasticdump`
+### Index mapping creation via `elasticdump`
 The JSON document provided above is saved as a file, `cell_load_mapping.json` and run the following command is run:
 ```bash
 elasticdump --type=mapping --input=./cell_load_mapping.json --output=http://localhost:9200 --output-index=cell_info
 ```
 
-### Index mapping creation through the web interface
+### Index mapping creation via the web interface
 ```
 PUT cell_info
 {
@@ -325,4 +334,13 @@ PUT cell_info
 }
 ```
 
-## Spark configuration
+## Elasticsearch connector deployment in the Spark cluster
+The possibility of interacting (reading/writing) from the Spark cluster with the Elastic Stack instance is enabled by means of [Elasticsearch for Apache Hadoop (*elasticsearch-hadoop*)](https://www.elastic.co/guide/en/elasticsearch/hadoop/current/reference.html). The elastic-hadoop binaries cover a variety of scenarios. Minimalistic JAR files are also offered for specific integrations and therefore, the minimalistic JAR file for Spark would be enough. JAR files can be downloaded from maven or from the Elastic site.
+
+Thus, the following command must be run on each instance of the HDFS cluster:
+```bash
+wget http://central.maven.org/maven2/org/elasticsearch/elasticsearch-spark-20_2.11/5.6.1/elasticsearch-spark-20_2.11-5.6.1.jar
+mv elasticsearch-spark-20_2.11-5.6.1.jar $SPARK_HOME/jars
+```
+
+It is also possible to install 
