@@ -4,7 +4,7 @@
       "cell_load": {
         "properties": {
           "cell": {
-            "type": "string"
+            "type": "keyword"
           },
           "date": {
             "type": "date"

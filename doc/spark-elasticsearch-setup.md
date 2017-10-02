@@ -279,7 +279,7 @@ Regardless of the approach, it is convenient to create a mapping for the index t
       "cell_load": {
         "properties": {
           "cell": {
-            "type": "string"
+            "type": "keyword"
           },
           "date": {
             "type": "date"
@@ -312,7 +312,7 @@ PUT cell_info
       "cell_load": {
         "properties": {
           "cell": {
-            "type": "string"
+            "type": "keyword"
           },
           "date": {
             "type": "date"
@@ -350,25 +350,54 @@ wget http://central.maven.org/maven2/org/elasticsearch/elasticsearch-hadoop/5.6.
 mv elasticsearch-hadoop-5.6.1.jar $SPARK_HOME/jars
 ```
 ## Elasticsearch configuration in the Spark cluster
-First, the Elastic Stack instance name must be registered on the instances of the HDFS cluster (in the Elastic Stack instance as well) by executing the following command:
+First, the Elastic Stack instance name must be registered on all the instances of the HDFS cluster (in the Elastic Stack instance as well) by executing the following command:
 
 ```bash
 echo "
-<elk-ip-address>		elk
+<elk-floating-ip-address>    elk
 " | sudo tee --append /etc/hosts
 ```
 
-As described in *[Integrating Hadoop and Elasticsearch – Part 2 – Writing to and Querying Elasticsearch from Apache Spark](https://db-blog.web.cern.ch/blog/prasanth-kothuri/2016-05-integrating-hadoop-and-elasticsearch-%E2%80%93-part-2-%E2%80%93-writing-and-querying)*, four settings have to be configured in order to enable writing to Elasticsearch indices (the full list of configuration settings is available [here](https://www.elastic.co/guide/en/elasticsearch/hadoop/current/configuration.html)):
-* `es.nodes`: List of Elasticsearch nodes, defaults to localhost.
-* `es.resource`: Elasticsearch port, defaults to 9200.
-* `es.resource`: Elasticsearch index.
-* `es.nodes.client.only`: If the Elasticsearch cluster allows access only through client nodes, then this setting is necessary; defaults to false.
+Mind that **the floating IP address must be used instead of the private IP address**. Otherwise, Pyspark will not be able to find the Elastic Stack cluster.
 
-It is important to note than it is not possible to change the configuration of an automatically created Spark Context. Thus, configuration must be set in the Pyspark notebooks via the command-line (mind that, to be accepted by Spark, Elasticsearch settings must be prefixed with *spark.*). Thus we can run the following command:
+## Writing to an Elasticsearch index from the Spark cluster
+Three elements must be considered when writing from Pyspark to an Elasticsearch index:
+* Access to the *elasticsearch-hadoop* binaries.
+* Configure the settings to route and enable writing operations.
+* Use the *elasticsearch-hadoop* API from Pyspark.
+
+### Access to the *elasticsearch-hadoop* binaries
 ```bash
-pyspark --master spark://cluster-master:7077 \
-        --executor-memory 24G --driver-memory 10G \
-        --jars $SPARK_HOME/jars/elasticsearch-spark-20_2.11-5.6.1.jar \
-        --conf spark.es.nodes="elk" \
-        --conf spark.es.resource=cell_info
+ pyspark --master spark://cluster-master:7077\
+         --jars $SPARK_HOME/jars/elasticsearch-spark-20_2.11-5.6.1.jar
+```
+### Configuration settings
+As described in *[Integrating Hadoop and Elasticsearch – Part 2 – Writing to and Querying Elasticsearch from Apache Spark](https://db-blog.web.cern.ch/blog/prasanth-kothuri/2016-05-integrating-hadoop-and-elasticsearch-%E2%80%93-part-2-%E2%80%93-writing-and-querying)*, several settings have to be configured to write to Elasticsearch indices (the full list of configuration settings is available [here](https://www.elastic.co/guide/en/elasticsearch/hadoop/current/configuration.html)):
+* `es.nodes`: List of Elasticsearch nodes, defaults to localhost.
+* `es.port`: Elasticsearch port, defaults to 9200.
+* `es.resource`: Where the Elasticsearch data is read and written to. It follows the format `<index>`/`<type>`. 
+* `es.nodes.client.only`: If the Elasticsearch cluster allows access only through client nodes, then this setting is necessary; defaults to *False*.
+
+Other settings must be also configured (see [here](https://discuss.elastic.co/t/sparkstreaming-to-elasticesrahc-error-networkclient-connection-timed-out-connect/45834/2)):
+* `es.nodes.discovery`: to use the only the nodes in the Elasticsearch cluster given in `es.nodes` setting for metadata queries. Defaults to *True*. It the project environment it must be set to *False*.
+
+Thus, the notebooks running in the Spark cluster must define the following configuration in order to enable writing on the Elasticsearch cluster:
+```python
+es_conf = {'es.resource': 'cell_info/cell_load',
+          'es.nodes': 'elk',
+          'es.nodes.discovery': 'false',
+          'es.port': '9200'}
+```
+
+### Write operation from Pyspark
+```python
+df_cells.rdd\
+        .map(lambda item: ("id", {"cell": item[0], "date": item[1], "load": item[2]}))\
+        .saveAsNewAPIHadoopFile (
+                                path='-', 
+                                outputFormatClass="org.elasticsearch.hadoop.mr.EsOutputFormat",
+                                keyClass="org.apache.hadoop.io.NullWritable", 
+                                valueClass="org.elasticsearch.hadoop.mr.LinkedMapWritable", 
+                                conf=es_conf
+                                )
 ```
