@@ -40,14 +40,6 @@ sudo pip install docker-compose
 
 The shell script, `docker_install.sh` is availabe in the `elastic` folder in the Github repo. 
 
-The instance name must be registered in the instances of the HDFS cluster (in the Elastic Stack instance as well) by executing the following command:
-
-```bash
-echo "
-<elk-ip-address>		elk
-" | sudo tee --append /etc/hosts
-```
-
 Next, we execute the following commands in order to enable docker use without `sudo` privileges (from [here] (https://docs.docker.com/engine/installation/linux/linux-postinstall/)):
 ```bash
 sudo groupadd docker
@@ -343,4 +335,40 @@ wget http://central.maven.org/maven2/org/elasticsearch/elasticsearch-spark-20_2.
 mv elasticsearch-spark-20_2.11-5.6.1.jar $SPARK_HOME/jars
 ```
 
-It is also possible to install 
+It is also possible to install the *uber* jar, this time from the Elastic site:
+```bash
+wget http://download.elastic.co/hadoop/elasticsearch-hadoop-5.6.1.zip
+unzip elasticsearch-hadoop-5.6.1.zip
+cp elasticsearch-hadoop-5.6.1/dist/elasticsearch-hadoop-5.6.1.jar $SPARK_HOME/jars
+rm elasticsearch-hadoop-5.6.1.zip
+rm -rf elasticsearch-hadoop-5.6.1/
+```
+
+It can be also downloaded from maven:
+```bash
+wget http://central.maven.org/maven2/org/elasticsearch/elasticsearch-hadoop/5.6.1/elasticsearch-hadoop-5.6.1.jar
+mv elasticsearch-hadoop-5.6.1.jar $SPARK_HOME/jars
+```
+## Elasticsearch configuration in the Spark cluster
+First, the Elastic Stack instance name must be registered on the instances of the HDFS cluster (in the Elastic Stack instance as well) by executing the following command:
+
+```bash
+echo "
+<elk-ip-address>		elk
+" | sudo tee --append /etc/hosts
+```
+
+As described in *[Integrating Hadoop and Elasticsearch – Part 2 – Writing to and Querying Elasticsearch from Apache Spark](https://db-blog.web.cern.ch/blog/prasanth-kothuri/2016-05-integrating-hadoop-and-elasticsearch-%E2%80%93-part-2-%E2%80%93-writing-and-querying)*, four settings have to be configured in order to enable writing to Elasticsearch indices (the full list of configuration settings is available [here](https://www.elastic.co/guide/en/elasticsearch/hadoop/current/configuration.html)):
+* `es.nodes`: List of Elasticsearch nodes, defaults to localhost.
+* `es.resource`: Elasticsearch port, defaults to 9200.
+* `es.resource`: Elasticsearch index.
+* `es.nodes.client.only`: If the Elasticsearch cluster allows access only through client nodes, then this setting is necessary; defaults to false.
+
+It is important to note than it is not possible to change the configuration of an automatically created Spark Context. Thus, configuration must be set in the Pyspark notebooks via the command-line (mind that, to be accepted by Spark, Elasticsearch settings must be prefixed with *spark.*). Thus we can run the following command:
+```bash
+pyspark --master spark://cluster-master:7077 \
+        --executor-memory 24G --driver-memory 10G \
+        --jars $SPARK_HOME/jars/elasticsearch-spark-20_2.11-5.6.1.jar \
+        --conf spark.es.nodes="elk" \
+        --conf spark.es.resource=cell_info
+```
