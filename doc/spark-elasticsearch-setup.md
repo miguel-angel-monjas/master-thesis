@@ -8,6 +8,11 @@ The [Elastic Stack](https://www.elastic.co/products) (formerly the ELK Stack) is
   * [Index mapping creation via elasticdump](#index-mapping-creation-via-elasticdump)
   * [Index mapping creation via the web interface](#index-mapping-creation-via-the-web-interface)
 * [Elasticsearch connector deployment in the Spark cluster](#elasticsearch-connector-deployment-in-the-spark-cluster)
+* [Elasticsearch configuration in the Spark cluster](#elasticsearch-configuration-in-the-spark-cluster)
+* [Writing to an Elasticsearch index from the Spark cluster](#writing-to-an-elasticsearch-index-from-the-spark-cluster)
+  * [Access to the *elasticsearch-hadoop* binaries](#access-to-the-elasticsearch-hadoop-binaries)
+  * [Configuration settings](#configuration-settings)
+  * [Write operation from Pyspark](#write-operation-from-pyspark)
 * [See also](#see-also)
 
 ----
@@ -270,7 +275,7 @@ There are three different approaches to save results of Spark computations in an
 * Save results as a CSV file and use Logstash to load it to Elasticsearch.
 * Save results as a JSON file and use Elasticdump to load it to Elasticsearch.
 
-Regardless of the approach, it is convenient to create a mapping for the index that will host the data. In our project it is necessary to store a number of timeseries describing each the load of a specific cell of a telecom operator for six months. Thus, each "record" is made of three elements: a *String* identifying the cell, an *Integer* representing a timestamp as seconds after the epoch, and another *Integer* representing the amoung of concurrent connections at the timestamp. Thus, the following mapping can be defined:
+Regardless of the approach, it is convenient to create a mapping for the index that will host the data. In our project it is necessary to store a number of timeseries describing each the load of a specific cell of a telecom operator for six months. Thus, each "record" is made of three elements: a *string* identifying the cell (as this type [has become deprecated](https://www.elastic.co/guide/en/elasticsearch/reference/current/string.html), the *keyworkd* type will be used instead), a *date* representing a timestamp as seconds after the epoch (it is important to note that a right *format* definition must be added to the *date* type definition: *epoch_second*; otherwise, Elasticsearch will consider the `date` element as a *long* number), and an *integer* representing the amount of concurrent connections at the timestamp in the given cell. Thus, the following mapping can be defined:
 
 ```json
 {
@@ -282,7 +287,8 @@ Regardless of the approach, it is convenient to create a mapping for the index t
             "type": "keyword"
           },
           "date": {
-            "type": "date"
+            "type": "date",
+            "format": "epoch_second"
           },
           "load": {
             "type": "integer"
@@ -296,7 +302,7 @@ Regardless of the approach, it is convenient to create a mapping for the index t
 
 An index, `cell_info`, and a document type, `cell_load`, are defined.
 
-Index creation can be accomplished in different ways: by means of `elasticdump` or by using [Sense](https://chrome.google.com/webstore/detail/sense-beta/lhjgkmllcaadmopgmanpapmpjgmfcfig?hl=en) or the Dev Tools in Kibana.
+Index creation can be accomplished in different ways: via the command line (using `curl -X`), by using [Sense](https://chrome.google.com/webstore/detail/sense-beta/lhjgkmllcaadmopgmanpapmpjgmfcfig?hl=en) or the Dev Tools in Kibana, or by means of `elasticdump`.
 
 ### Index mapping creation via `elasticdump`
 The JSON document provided above is saved as a file, `cell_load_mapping.json` and run the following command is run:
@@ -305,6 +311,7 @@ elasticdump --type=mapping --input=./cell_load_mapping.json --output=http://loca
 ```
 
 ### Index mapping creation via the web interface
+The following query must be provided through Sense or through the Kibana Developer Tool:
 ```
 PUT cell_info
 {
@@ -312,7 +319,8 @@ PUT cell_info
       "cell_load": {
         "properties": {
           "cell": {
-            "type": "keyword"
+            "type": "keyword",
+            "format": "epoch_second"
           },
           "date": {
             "type": "date"
@@ -325,6 +333,8 @@ PUT cell_info
     }
 }
 ```
+
+If the index had to be deleted, this query could be used: `DELETE cell_info`.
 
 ## Elasticsearch connector deployment in the Spark cluster
 The possibility of interacting (reading/writing) from the Spark cluster with the Elastic Stack instance is enabled by means of [Elasticsearch for Apache Hadoop (*elasticsearch-hadoop*)](https://www.elastic.co/guide/en/elasticsearch/hadoop/current/reference.html). The elastic-hadoop binaries cover a variety of scenarios. Minimalistic JAR files are also offered for specific integrations and therefore, the minimalistic JAR file for Spark would be enough. JAR files can be downloaded from maven or from the Elastic site.
@@ -367,9 +377,12 @@ Three elements must be considered when writing from Pyspark to an Elasticsearch 
 * Use the *elasticsearch-hadoop* API from Pyspark.
 
 ### Access to the *elasticsearch-hadoop* binaries
+As the *elasticsearch-hadoop* binaries have been copied to the `$SPARK_HOME/jars` folder, **there is no need to explicitly load them**.
+
+Otherwise, the `--jars` setting must be used when calling `pyspark`. For instance, if `elasticsearch-spark-20_2.11-5.6.1.jar` had been copied to `/tmp`, `pyspark` would have to be called in the following way:
 ```bash
  pyspark --master spark://cluster-master:7077\
-         --jars $SPARK_HOME/jars/elasticsearch-spark-20_2.11-5.6.1.jar
+         --jars /tmp/elasticsearch-spark-20_2.11-5.6.1.jar
 ```
 ### Configuration settings
 As described in *[Integrating Hadoop and Elasticsearch – Part 2 – Writing to and Querying Elasticsearch from Apache Spark](https://db-blog.web.cern.ch/blog/prasanth-kothuri/2016-05-integrating-hadoop-and-elasticsearch-%E2%80%93-part-2-%E2%80%93-writing-and-querying)*, several settings have to be configured to write to Elasticsearch indices (the full list of configuration settings is available [here](https://www.elastic.co/guide/en/elasticsearch/hadoop/current/configuration.html)):
@@ -381,6 +394,8 @@ As described in *[Integrating Hadoop and Elasticsearch – Part 2 – Writing to
 Other settings must be also configured (see [here](https://discuss.elastic.co/t/sparkstreaming-to-elasticesrahc-error-networkclient-connection-timed-out-connect/45834/2)):
 * `es.nodes.discovery`: to use the only the nodes in the Elasticsearch cluster given in `es.nodes` setting for metadata queries. Defaults to *True*. It the project environment it must be set to *False*.
 
+And [here]()
+
 Thus, the notebooks running in the Spark cluster must define the following configuration in order to enable writing on the Elasticsearch cluster:
 ```python
 es_conf = {'es.resource': 'cell_info/cell_load',
@@ -390,6 +405,12 @@ es_conf = {'es.resource': 'cell_info/cell_load',
 ```
 
 ### Write operation from Pyspark
+The cell load result is a dataframe with the following schema:
+
+```python
+```
+
+Provided that `es_conf` has been already defined:
 ```python
 df_cells.rdd\
         .map(lambda item: ("id", {"cell": item[0], "date": item[1], "load": item[2]}))\
