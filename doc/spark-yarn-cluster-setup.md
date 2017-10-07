@@ -52,5 +52,5 @@ hdsf-slave-2
 ```
 
 ## See also
-* [Setting up a Hadoop cluster](./hadoop-cluster-setup.md).
+* [Setting up an HDFS cluster](./hadoop-cluster-setup.md).
 * [Running a Spark Standalone cluster](./spark-standalone-cluster-setup.md).

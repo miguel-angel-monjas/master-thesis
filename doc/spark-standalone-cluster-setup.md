@@ -1,5 +1,5 @@
 # Running a Spark cluster in Standalone mode
-In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how to set up a Hadoop cluster was provided. It is made of a master node (hosting an HDFS *NameNode*) and three slaves (running an HDFS *DataNode* each). Here, a description on e how to deploy a Spark cluster in Standalone mode on top of it is provided. As YARN is not used, no dependencies between the Hadoop and the Spark clusters will exist and Hadoop will simply provide storage capabilities. The official documentation can be accessed [here](https://spark.apache.org/docs/latest/spark-standalone.html).
+In [Setting up an HDFS cluster](./hadoop-cluster-setup.md) a description on how to set up an HDFS cluster was provided. It is made of a master node (hosting an HDFS *NameNode*) and three slaves (running an HDFS *DataNode* each). Here, a description on how to deploy a Spark cluster in Standalone mode on top of it is provided. As YARN is not used, no dependencies between the HDFS and the Spark clusters will exist and HDFS will simply provide storage capabilities. The official documentation can be accessed [here](https://spark.apache.org/docs/latest/spark-standalone.html).
 
 * [Pre-requisites](#pre-requisites)
 * [Spark installation on all instances](#spark-installation-on-all-instances)
@@ -15,7 +15,7 @@ In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how
 ----
 
 ## Pre-requisites
-Hadoop 2.7.4 is installed and a cluster is set up as described in [Setting up a Hadoop cluster](./spark-cluster-management.md).
+Hadoop 2.7.4 is installed and a cluster is set up as described in [Setting up an HDFS cluster](./spark-cluster-management.md).
 
 ## Spark installation on all instances
 A Spark release compatible with Hadoop 2.7.4 and Zeppelin 0.7.2, [Spark 2.0.2](https://spark.apache.org/releases/spark-release-2-0-2.html), is chosen (see a discussion on the version [below](#key-take-aways). Use a symbolic link to easily upgrade or change versions if wished.
@@ -201,7 +201,7 @@ If we verify the status of the Spark cluster (in `http://<master-floating-ip-add
 We find the existing *Workers* listed in the previous screenshot **and** the Spark shell as a new *Running Application*. At the same time, the Spark context UI (`http://<master-floating-ip-address>:4040/`) is available as well.
 
 ## Key take-aways
-* Installation and deployment of Spark is supposed to be a simple and straightforward. Downloading, unpacking and minimal configuration would be enough for starting to work (tuning is absolutely necessary, but even with default options, Spark should offer the standard functionality). However, it is necessary to be careful when considering the interaction between Spark and other technologies. In particular, Spark releases from 2.1.0 onwards come with activated Hive support and that can create specific problems when interacting with Hadoop is the HSFS cluster is configured but not started. In said situations, when running `spartk-shell`, the following error pops up: `java.lang.IllegalArgumentException: Error while instantiating 'org.apache.spark.sql.hive.HiveSessionState'`. Starting the cluster or unsetting the environment variable `$HADOOP_CONF_DIR` would be enough.
+* Installation and deployment of Spark is supposed to be a simple and straightforward. Downloading, unpacking and minimal configuration would be enough for starting to work (tuning is absolutely necessary, but even with default options, Spark should offer the standard functionality). However, it is necessary to be careful when considering the interaction between Spark and other technologies. In particular, Spark releases from 2.1.0 onwards come with activated Hive support and that can create specific problems when interacting with Hadoop if the HSFS cluster is configured but not started. In said situations, when running `spark-shell`, the following error pops up: `java.lang.IllegalArgumentException: Error while instantiating 'org.apache.spark.sql.hive.HiveSessionState'`. Starting the cluster or unsetting the environment variable `$HADOOP_CONF_DIR` would be enough.
 * Zeppelin 0.7.2 does not support Spark releases from 2.2.0 onwards.
 * As mentioned, the default Hive configuration leads to the creation of a `derby.log` file and a `metastore_db` folder in the location where the shell is run. As mentioned above, a suitable location have to be configured.
 

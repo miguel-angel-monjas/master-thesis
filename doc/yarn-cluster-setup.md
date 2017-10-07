@@ -1,5 +1,5 @@
 # Deploying YARN on a Hadoop cluster
-In [Setting up a Hadoop cluster](./hadoop-cluster-setup.md) a description on how to set up a Hadoop cluster was provided. The cluster is made of a master node (hosting an HDFS *NameNode* and a HDFS *DataNode*) and two slaves (running each an HDFS *DataNode*). Here you have a description on how to deploy YARN on top of it.
+In [Setting up an HDFS cluster](./hadoop-cluster-setup.md) a description on how to set up an HDFS cluster was provided. The cluster is made of a master node (hosting an HDFS *NameNode* and a HDFS *DataNode*) and two slaves (running each an HDFS *DataNode*). Here you have a description on how to deploy YARN on top of it.
 
 * [Cluster instances configurations](#cluster-instances-configurations)
 * [YARN start and stop](#yarn-start-and-stop)
@@ -97,7 +97,7 @@ Start YARN once the Distributed File System has been already started:
 $HADOOP_HOME/sbin/start-yarn.sh
 ```
 
-The output of jps should list `NodeManager` and `ResourceManager` on the master node (besides the processes related to plain Hadoop):
+The output of jps should list `NodeManager` and `ResourceManager` on the master node (besides the processes related to HDFS):
 ```bash
 17089 DataNode
 16947 NameNode
@@ -124,7 +124,7 @@ $HADOOP_HOME/sbin/stop-yarn.sh
 It is possible to start (and stop) both the DFS and the YARN daemons, by using `$HADOOP_HOME/sbin/start-all.sh` and `$HADOOP_HOME/sbin/stop-all.sh` but a warning states that such scripts are deprecated.
 
 ## Key take-aways
-Some considerations when setting up a Hadoop cluster have been already mentioned. Some of them (binding to all interfaces) apply to the YARN cluster as well. However, new issues arise:
+Some considerations when setting up an HDFS cluster have been already mentioned. Some of them (binding to all interfaces) apply to the YARN cluster as well. However, new issues arise:
 * Careful dimensioning of the cluster is required. If small instance flavors are used, *NodeManagers* will not be able to gather enough resources and will be rejected at registration. Thus, it is necessary to use instances with a certain amount of memory and properly configure `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`.
 
 ## See also

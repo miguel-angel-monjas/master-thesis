@@ -1,4 +1,4 @@
-# Setting up a Hadoop cluster
+# Setting up an HDFS cluster
 This tutorial is based on [the official Hadoop documentation](https://hadoop.apache.org/docs/r2.7.2/hadoop-project-dist/hadoop-common/ClusterSetup.html) and [other resources found on the Internet](https://chawlasumit.wordpress.com/2015/03/09/install-a-multi-node-hadoop-cluster-on-ubuntu-14-04/). It is important to note that as new releases come out, some properties become deprecated and old tutorials are no longer entirely valid (see the [list of deprecated properties](https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/DeprecatedProperties.html)).
 
 This tutorial assumes that [several instances have been created on an Openstack cloud](doc/environment-description.md). No specific dependencies to this type of cloud (beyond the handling of private/public -floating- IP addresses) have been detected so that the procedures should provide relevant information for setting up a cluster in many environments.
@@ -90,7 +90,7 @@ sudo apt-get install ssh -y
 ```
 
 ## /etc/hosts update in all instances
-Here it is important to note that private IP addreses must be used in this file (no floating IP addresses are involved here).
+Here it is important to note that private IP addresses must be used in this file (no floating IP addresses are involved here).
 
 ```bash
 echo "
@@ -102,10 +102,10 @@ echo "
 ```
 
 ## Password-less ssh setup
-### Option 1: the lazy (and insecure way)
-Enabling password-less ssh connection between the instances can be tricky, as connections to the instances in the Openstack cloud cannot be done but using password-less ssh with the private key used to deploy the instances (named `lab`). That is, any instance in the considered Openstack cloud already accepts ssh connections from clients with the `lab` private key. Thus, making the private key available in the master note would be enough (if unsure about security, mind that any user able to connect to any Openstack instance already have the private key).
+### Option 1: password-less by means of the cloud key
+Enabling password-less ssh connection between the instances can be tricky, as only password-less ssh connections to the instances in the Openstack cloud are enabled. Password-less connections use the cloud private key employed to deploy the instances (named `lab`). That is, any instance in the considered Openstack cloud already accepts ssh connections from clients with the `lab` private key. Thus, making the private key available in the master note would be enough (if unsure about security, mind that any user able to connect to any Openstack instance already have the private key).
 
-Thus, the simplest way to enable the ssh connection is simply to copy the `lab` key (with OpenSSH format) to the `/home/ubuntu/.ssh` folder in the master node (using any secure FTP client). As you were using PuTTY to handle connections, a private key with proper OpenSSH format would have to be obtained from `lab.ppk`. It can be done by means of PuTTYgen, by loading the private key and exporting it as an OpenSSH key. The resulting private key will be named `id_rsa` and subsequently uploaded to the master instance.
+That is, the simplest way to enable the ssh connection is simply to copy the `lab` key (with OpenSSH format) to the `/home/ubuntu/.ssh` folder in the master node (using any secure FTP client). As PuTTY is used to handle connections, a private key with proper OpenSSH format would have to be obtained from `lab.ppk`. It can be done by means of PuTTYgen, by loading the private key and exporting it as an OpenSSH key. The resulting private key will be named `id_rsa` and subsequently uploaded to the master instance.
 
 Once in the proper folder, the key file must be given the right permissions:
 ```bash
@@ -119,10 +119,10 @@ ssh -o StrictHostKeyChecking=no cluster-slave-2
 ssh -o StrictHostKeyChecking=no cluster-slave-3
 ```
 
-### Option 2: the not so insecure way
-If leaving the cloud private key in the master instance is not acceptable, an alternative schema can be used. It uses the cloud private key just to get access to upload a new key to the slave instances. Once done, the cloud private key is removed. First, the procedures to handle the `lab` private key in the master instance described previously (upload and permissions set) are followed. The result will be having a private key with proper permissions in `~/.ssh/id_rsa`.
+### Option 2: creation of a new key pair and distribution from the master instance
+If permanently leaving the cloud private key in the master instance is not acceptable, an alternative schema can be used. It uses the cloud private key only to upload a new key to the slave instances. Once they are uploaded, the cloud private key is removed from the master instance. First, the procedures to handle the `lab` private key in the master instance described previously (upload and permissions set) are followed. The result will be having a private key with proper permissions in `~/.ssh/id_rsa` at the master instance.
 
-Next, a new pair of public/private keys is generated (mind the new key names in order not to overwrite the existing key). This new key pair will be the one used for subsequent communications between the master and the slave instances:
+Next, a new pair of public/private keys is generated in the master instance (mind the new key names in order not to overwrite the existing key).
 ```bash
 ssh-keygen -t rsa -P '' -f ~/.ssh/idhdfs_rsa
 cat ~/.ssh/idhdfs_rsa.pub >> ~/.ssh/authorized_keys
@@ -140,6 +140,7 @@ rm ~/.ssh/id_rsa
 mv ~/.ssh/idhdfs_rsa ~/.ssh/id_rsa
 mv ~/.ssh/idhdfs_rsa.pub ~/.ssh/id_rsa.pub
 ```
+From that point on, this new key pair is the one that will be used in the communications between the master and the slave instances:
 
 Verify that seamless ssh connection is enabled by running the following commands on the master instance:
 ```bash
@@ -148,16 +149,16 @@ ssh -o StrictHostKeyChecking=no cluster-slave-2
 ssh -o StrictHostKeyChecking=no cluster-slave-3
 ```
 
-### Option 3: the secure way
-It is possible not to expose at all the cloud private key. The procedure is as follows a pair of keys and a proper `authorized_keys` file are created out-of-the-box. For instance, in another instance in the cloud.
+### Option 3: creation of a new key pair and distribution from a different instance
+It is possible not to expose at all the cloud private key. A new pair of keys and a proper `authorized_keys` file are created out-of-the-box (for instance, in another instance of the cloud) and delivered to the members of the cluster.
 
-First, access to the instance cloud following the usual procedure (that is, password-less). Create a new pair of keys:
+First, access to an instance in the cloud following the usual procedure (that is, password-less). Create a new pair of keys:
 ```bash
 cp ~/.ssh/authorized_keys ~/.ssh/authorized_keys_original
 ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa
 cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
 ```
-There will be three files in the `~/.ssh/` folder: `id_rsa`, `id_rsa.pub` and `authorized_keys` (besides the old `authorized_keys`). Remove `id_rsa.pub`, as it is no longer necessary. Retrieve the two remaining files (now you can restore the old `~/.ssh/authorized_keys_original`), upload them to the master instance and move them to the `~/.ssh/` folder (replace the file ` ~/.ssh/authorized_keys` with the one it has been uploaded). Set the proper permissions:
+There will be three files in the `~/.ssh/` folder: `id_rsa`, `id_rsa.pub` and `authorized_keys` (besides the old `authorized_keys`, now `authorized_keys_original`). Remove `id_rsa.pub`, as it is no longer necessary. Retrieve the two remaining files (now you can restore the old `~/.ssh/authorized_keys_original`), upload them to the master instance and move them to the `~/.ssh/` folder (replace the file ` ~/.ssh/authorized_keys` with the one it has been uploaded). Set the proper permissions:
 ```bash
 chmod 0600 ~/.ssh/id_rsa
 chmod 0600 ~/.ssh/authorized_keys
@@ -247,7 +248,7 @@ $HADOOP_HOME/bin/hdfs namenode -format
 ```
 
 ## Distributed File System start and stop
-Although it is possible to start HDFS and YARN daemons at once, it is better to run tehem separately, obviously if YARN is not needed. The scripts for starting and stopping the HDFS and YARN daemons are available in the `$HADOOP_HOME/sbin` folder. HDSF daemons are started by running, only in the master node, the following script:
+Although it is possible to start HDFS and YARN daemons at once, it is better to run them separately, obviously if YARN is not needed. The scripts for starting and stopping the HDFS and YARN daemons are available in the `$HADOOP_HOME/sbin` folder. HDSF daemons are started by running, only in the master node, the following script:
 ```bash
 $HADOOP_HOME/sbin/start-dfs.sh
 ```
@@ -263,7 +264,9 @@ And a `DataNode` in each slave instance.
 
 If this output is not got on all the instances of the cluster, it is necessary to analyze the log files available at `HADOOP_LOG_DIR`. Relevant log files are `hadoop-ubuntu-datanode-cluster-master.log`, `hadoop-ubuntu-namenode-cluster-master.log`, and `hadoop-ubuntu-secondarynamenode-cluster-master.log`.
 
-The status of the HDFS cluster can be verified in the [HDFS Web Interface](https://hadoop.apache.org/docs/r2.7.4/hadoop-project-dist/hadoop-hdfs/HdfsUserGuide.html#Web_Interface) at `http://<master-floating-ip-address>:50070/`.
+The status of the HDFS cluster can be verified in the [HDFS Web Interface](https://hadoop.apache.org/docs/r2.7.4/hadoop-project-dist/hadoop-hdfs/HdfsUserGuide.html#Web_Interface) at `http://<master-floating-ip-address>:50070/`:
+
+![HDFS Web Interface at http://<master-floating-ip-address>:50070/](./HDFD-cluster-ui-1.PNG)
 
 To stop the HDFS cluster, simply type:
 ```bash
@@ -278,14 +281,14 @@ hdfs dfs -put DWFET_CDR_CELLID_201602.csv /data
 ```
 In order to verify that the file has been loaded, the HDFS Web Interface (`http://<master-floating-ip-address>:50070/` > Utilities > Browse the file system) can be used:
 
-![Hadoop Web Interface: uploaded file](./hadoop-single-file.PNG)
+![HDFS Web Interface: uploaded file](./hadoop-single-file.PNG)
 
 The whole data load process is described in [Data load](./data-load.md).
 
 ## Key take-aways
-Works such as *[Spark in action](https://www.manning.com/books/spark-in-action)* (Manning, 2017) state that "The installation [of YARN and Hadoop] is straightforward", but depending on the environment it can be not totally true. The main issues addressed when setting up the Hadoop cluster in the considered scenario (Openstack cloud with Ubuntu 16.04 instances) are the following ones:
-* Private IP addresses must be used to refer to the cluster instances in the configuration files. If floating IP addresses are used, it will be not possible to connect any instance to each other. It is possible to override this behavior by setting the properties `*-bind-host` en `hdfs-site.xml` to 0.0.0.0 (see the [official guidelines for HDFS multihoming environments](https://hadoop.apache.org/docs/r2.8.0/hadoop-project-dist/hadoop-hdfs/HdfsMultihoming.html#Ensuring_HDFS_Daemons_Bind_All_Interfaces)), but this kind of configuration is not possible in Spark.
-* Password-less ssh is easy to implement provided that it is possible copy the public keys to all the slave instances. As an Openstack cloud that follows exactly the same principle is used, uploading a suitable key to the slaves can be tricky. The third alternative described above (creating a new pair of keys out-of-the-box) is recommended as it does not expose the private Openstack cloud key. Using a specific key pair can be used to fully automate the deployment of a Hadoop and/or Spark cluster.
+Works such as *[Spark in action](https://www.manning.com/books/spark-in-action)* (Manning, 2017) state that "The installation [of YARN and Hadoop] is straightforward", but depending on the environment it can be not totally true. The main issues addressed when setting up the HDFS cluster in the considered scenario (Openstack cloud with Ubuntu 16.04 instances) are the following ones:
+* Private IP addresses must be used when referring to the cluster instances in the configuration files. If floating IP addresses are used, it will be not possible to connect any instance to each other. It is possible to override this behavior and use the floating IP addresses by setting the properties `*-bind-host` in `hdfs-site.xml` to 0.0.0.0 (see the [official guidelines for HDFS multihoming environments](https://hadoop.apache.org/docs/r2.8.0/hadoop-project-dist/hadoop-hdfs/HdfsMultihoming.html#Ensuring_HDFS_Daemons_Bind_All_Interfaces)), but this kind of configuration is not possible in Spark.
+* Careless password-less ssh setup may lead to exposing the cloud private IP address: it is much more secure to use a key pair just for the cluster. It is created out of the box and the private key uploaded to the master instance. Slave instances do not even need the public key, but only the `authorized_keys` file created as part of the key pair generation process.
 * The *NameNode* is a single point of failure in the HDFS cluster. Hosting the *NameNode* and a *DataNode* in the same instance may translate into resource shortage in the *NameNode* and the usual `Name node is in safe mode. Resources are low on NN. Please add or free up more resources then turn off safe mode manually` error message. Although the desployment started initially with a *DataNode* in the master instance, it was finally removed.
 
 ## See also

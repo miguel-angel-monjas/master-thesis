@@ -42,7 +42,7 @@ echo '
 # Set ANACONDA_HOME
 export ANACONDA_HOME=/usr/local/anaconda
 # Add Anaconda bin directory to PATH
-export PATH=$PATH:$ANACONDA_HOME/bin
+export PATH=$ANACONDA_HOME/bin:$PATH
 ' >> ~/.bashrc
 ```
 
