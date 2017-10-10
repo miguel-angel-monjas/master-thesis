@@ -19,7 +19,7 @@ This tutorial assumes that [several instances have been created on an Openstack 
 ----
 
 ## Components of the cluster
-The HDFS cluster will be made of four nodes: one master (`cluster-master`) and three slaves (`cluster-slave-1`, `cluster-slave-2` and `cluster-slave-3`). Slaves will run a *DataNode* each, while only a *NameNode* will run on the master node (initial configurations deployed also a *DataNode* in the master node, but this configuration did not work as the *NameNode* run out of resources frequently (see [Key take-aways](#key-take-aways)).
+The HDFS cluster will be made of four nodes: one master (`cluster-master`) and three slaves (`cluster-slave-1`, `cluster-slave-2` and `cluster-slave-3`). Slaves will run a *DataNode* each, while only a *NameNode* will run on the master node (initial configurations deployed also a *DataNode* on the master node, but this configuration did not work as the *NameNode* run out of resources frequently (see [Key take-aways](#key-take-aways)).
 
 ## Java installation on all instances
 Java must be installed in all the cluster instances: Oracle Java 8 has been chosen (some tutorials found on the Internet, such as [this](http://tecadmin.net/install-oracle-java-8-jdk-8-ubuntu-via-ppa/) and [this](http://stackoverflow.com/questions/19275856/auto-yes-to-the-license-agreement-on-sudo-apt-get-y-install-oracle-java7-instal)) are used):
@@ -103,9 +103,9 @@ echo "
 
 ## Password-less ssh setup
 ### Option 1: password-less by means of the cloud key
-Enabling password-less ssh connection between the instances can be tricky, as only password-less ssh connections to the instances in the Openstack cloud are enabled. Password-less connections use the cloud private key employed to deploy the instances (named `lab`). That is, any instance in the considered Openstack cloud already accepts ssh connections from clients with the `lab` private key. Thus, making the private key available in the master note would be enough (if unsure about security, mind that any user able to connect to any Openstack instance already have the private key).
+Enabling password-less ssh connection between the instances can be tricky, as only password-less ssh connections to the instances in the Openstack cloud are enabled. Password-less connections use the cloud private key employed to deploy the instances (named `lab`). That is, any instance in the considered Openstack cloud already accepts ssh connections from clients with the `lab` private key. Thus, making the private key available on the master note would be enough (if unsure about security, mind that any user able to connect to any Openstack instance already have the private key).
 
-That is, the simplest way to enable the ssh connection is simply to copy the `lab` key (with OpenSSH format) to the `/home/ubuntu/.ssh` folder in the master node (using any secure FTP client). As PuTTY is used to handle connections, a private key with proper OpenSSH format would have to be obtained from `lab.ppk`. It can be done by means of PuTTYgen, by loading the private key and exporting it as an OpenSSH key. The resulting private key will be named `id_rsa` and subsequently uploaded to the master instance.
+That is, the simplest way to enable the ssh connection is simply to copy the `lab` key (with OpenSSH format) to the `/home/ubuntu/.ssh` folder on the master node (using any secure FTP client). As PuTTY is used to handle connections, a private key with proper OpenSSH format would have to be obtained from `lab.ppk`. It can be done by means of PuTTYgen, by loading the private key and exporting it as an OpenSSH key. The resulting private key will be named `id_rsa` and subsequently uploaded to the master instance.
 
 Once in the proper folder, the key file must be given the right permissions:
 ```bash
@@ -120,9 +120,9 @@ ssh -o StrictHostKeyChecking=no cluster-slave-3
 ```
 
 ### Option 2: creation of a new key pair and distribution from the master instance
-If permanently leaving the cloud private key in the master instance is not acceptable, an alternative schema can be used. It uses the cloud private key only to upload a new key to the slave instances. Once they are uploaded, the cloud private key is removed from the master instance. First, the procedures to handle the `lab` private key in the master instance described previously (upload and permissions set) are followed. The result will be having a private key with proper permissions in `~/.ssh/id_rsa` at the master instance.
+If permanently leaving the cloud private key on the master instance is not acceptable, an alternative schema can be used. It uses the cloud private key only to upload a new key to the slave instances. Once they are uploaded, the cloud private key is removed from the master instance. First, the procedures to handle the `lab` private key on the master instance described previously (upload and permissions set) are followed. The result will be having a private key with proper permissions in `~/.ssh/id_rsa` at the master instance.
 
-Next, a new pair of public/private keys is generated in the master instance (mind the new key names in order not to overwrite the existing key).
+Next, a new pair of public/private keys is generated on the master instance (mind the new key names in order not to overwrite the existing key).
 ```bash
 ssh-keygen -t rsa -P '' -f ~/.ssh/idhdfs_rsa
 cat ~/.ssh/idhdfs_rsa.pub >> ~/.ssh/authorized_keys
@@ -248,7 +248,7 @@ $HADOOP_HOME/bin/hdfs namenode -format
 ```
 
 ## Distributed File System start and stop
-Although it is possible to start HDFS and YARN daemons at once, it is better to run them separately, obviously if YARN is not needed. The scripts for starting and stopping the HDFS and YARN daemons are available in the `$HADOOP_HOME/sbin` folder. HDSF daemons are started by running, only in the master node, the following script:
+Although it is possible to start HDFS and YARN daemons at once, it is better to run them separately, obviously if YARN is not needed. The scripts for starting and stopping the HDFS and YARN daemons are available in the `$HADOOP_HOME/sbin` folder. HDSF daemons are started by running, only on the master node, the following script:
 ```bash
 $HADOOP_HOME/sbin/start-dfs.sh
 ```
@@ -289,7 +289,7 @@ The whole data load process is described in [Data load](./data-load.md).
 Works such as *[Spark in action](https://www.manning.com/books/spark-in-action)* (Manning, 2017) state that "The installation [of YARN and Hadoop] is straightforward", but depending on the environment it can be not totally true. The main issues addressed when setting up the HDFS cluster in the considered scenario (Openstack cloud with Ubuntu 16.04 instances) are the following ones:
 * Private IP addresses must be used when referring to the cluster instances in the configuration files. If floating IP addresses are used, it will be not possible to connect any instance to each other. It is possible to override this behavior and use the floating IP addresses by setting the properties `*-bind-host` in `hdfs-site.xml` to 0.0.0.0 (see the [official guidelines for HDFS multihoming environments](https://hadoop.apache.org/docs/r2.8.0/hadoop-project-dist/hadoop-hdfs/HdfsMultihoming.html#Ensuring_HDFS_Daemons_Bind_All_Interfaces)), but this kind of configuration is not possible in Spark.
 * Careless password-less ssh setup may lead to exposing the cloud private IP address: it is much more secure to use a key pair just for the cluster. It is created out of the box and the private key uploaded to the master instance. Slave instances do not even need the public key, but only the `authorized_keys` file created as part of the key pair generation process.
-* The *NameNode* is a single point of failure in the HDFS cluster. Hosting the *NameNode* and a *DataNode* in the same instance may translate into resource shortage in the *NameNode* and the usual `Name node is in safe mode. Resources are low on NN. Please add or free up more resources then turn off safe mode manually` error message. Although the desployment started initially with a *DataNode* in the master instance, it was finally removed.
+* The *NameNode* is a single point of failure in the HDFS cluster. Hosting the *NameNode* and a *DataNode* in the same instance may translate into resource shortage in the *NameNode* and the usual `Name node is in safe mode. Resources are low on NN. Please add or free up more resources then turn off safe mode manually` error message. Although the desployment started initially with a *DataNode* on the master instance, it was finally removed.
 
 ## See also
 * [Running a Spark Standalone cluster](./spark-standalone-cluster-setup.md)

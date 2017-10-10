@@ -17,7 +17,7 @@ The [Elastic Stack](https://www.elastic.co/products) (formerly the ELK Stack) is
 
 ----
 ## Pre-requisites
-The deployment of Elastic Stack on an Openstack instance will be carried out by means of Docker containers. Thus, Docker CE and Docker Compose have to be installed before the containers can be created. It can be done by executing a shell script with the following content (taken from the official Docker documentation on [Docker CE](https://docs.docker.com/engine/installation/linux/ubuntu/) and [Docker Compose](https://docs.docker.com/compose/install/)):
+The deployment of Elastic Stack on an Openstack instance will be carried out by means of Docker containers running official Elastic images. Thus, Docker CE and Docker Compose have to be installed before the containers can be created. It can be done by executing a shell script with the following content (taken from the official Docker documentation on [Docker CE](https://docs.docker.com/engine/installation/linux/ubuntu/) and [Docker Compose](https://docs.docker.com/compose/install/)):
 
 ```bash
 #!/bin/sh
@@ -43,7 +43,7 @@ sudo pip install --upgrade pip
 sudo pip install docker-compose
 ```
 
-The shell script, `docker_install.sh` is availabe in the `elastic` folder in the Github repo. 
+The shell script, [`docker_install.sh`](https://github.com/miguel-angel-monjas/master-thesis/blob/master/elastic/docker_install.sh) is availabe in the `elastic` folder in the Github repo. 
 
 Next, we execute the following commands in order to enable docker use without `sudo` privileges (from [here] (https://docs.docker.com/engine/installation/linux/linux-postinstall/)):
 ```bash
@@ -193,7 +193,7 @@ networks:
       driver: bridge
 ```
 
-Some aspect to remark:
+Some aspects to remark:
 * Storage in the Elasticsearch cluster is persistent, as two volumes in the host machine, handled by Docker, are used: `esdata1` and `esdata2`. That is, although the containers are stopped, storage is kept. The volumes contents can be erased by removing the volumes (`docker volume rm dockerelastic_esdata1` and `docker volume rm dockerelastic_esdata2`).
 * Three ports are exposed so that it is possible to interact with the components of the Elastic Stack: 9200 for Elasticsearch, 5601 for Kibana and 5001 for Logstash (that is, `<elk-floating-ip-address>:9200`, `<elk-floating-ip-address>:5601` and `<elk-floating-ip-address>:5001`).
 
@@ -244,6 +244,9 @@ Creating logstash ...
 Creating kibana
 Creating logstash ... done
 ```
+It is possible to verify the right installation of the Elastic Stack by accessing `http://<elk-floating-ip-address>:5601`. The Kibana web UI should be shown. It is possible to verify the right initialization of the containers by typing `docker ps` and verifying that all the containers are running or to inspects the logs by typing `docker logs elasticsearch`, `docker logs kibana`... (Kibana is usually the component that takes more time to start: *Optimizing and caching bundles for kibana, stateSessionStorageRedirect, timelion and status_page. This may take a few minutes*):
+
+![Main Kibana UI home](./kibana-discover.PNG)
 
 ## Elasticdump installation in the host instance
 In the following sections, different approaches to save the results of Spark computations in Elasticsearch will be provided. One of them is based on `elasticdump`. Its installation in Ubuntu can be troublesome as `elasticdump` relies on `nodejs` and the installation of the latter in the usual way (that is, by running ```sudo apt-get install nodejs npm -y```) ends up in an old `nodejs` release, not able to run `elasticdump`. Based on the official [NodeSource](https://nodesource.com/blog/installing-node-js-tutorial-ubuntu/) and [elasticdump](https://www.npmjs.com/package/elasticdump) documentation:
@@ -337,28 +340,32 @@ PUT cell_info
 If the index had to be deleted, this query could be used: `DELETE cell_info`.
 
 ## Elasticsearch connector deployment in the Spark cluster
-The possibility of interacting (reading/writing) from the Spark cluster with the Elastic Stack instance is enabled by means of [Elasticsearch for Apache Hadoop (*elasticsearch-hadoop*)](https://www.elastic.co/guide/en/elasticsearch/hadoop/current/reference.html). The elastic-hadoop binaries cover a variety of scenarios. Minimalistic JAR files are also offered for specific integrations and therefore, the minimalistic JAR file for Spark would be enough. JAR files can be downloaded from maven or from the Elastic site.
+The possibility of interacting (reading/writing) from the Spark cluster with the Elastic Stack instance is enabled by means of a connector: [Elasticsearch for Apache Hadoop (*elasticsearch-hadoop*)](https://www.elastic.co/guide/en/elasticsearch/hadoop/current/reference.html). The connector binaries cover a variety of scenarios. Minimalistic jar files are also offered for specific integrations and therefore, the minimalistic jar file for Spark is enough to meet the project requirements. Several options are available:
 
-Thus, the following command must be run on each instance of the HDFS cluster:
-```bash
-wget http://central.maven.org/maven2/org/elasticsearch/elasticsearch-spark-20_2.11/5.6.1/elasticsearch-spark-20_2.11-5.6.1.jar
-mv elasticsearch-spark-20_2.11-5.6.1.jar $SPARK_HOME/jars
-```
+* Download the jar file from Maven and copy it to the `$SPARK_HOME/jars` folder on all the cluster instances. Thus, the following commands must be run on each instance of the HDFS cluster:
+   ```bash
+   wget http://central.maven.org/maven2/org/elasticsearch/elasticsearch-spark-20_2.11/5.6.1/elasticsearch-spark-20_2.11-5.6.1.jar
+   mv elasticsearch-spark-20_2.11-5.6.1.jar $SPARK_HOME/jars
+   ```
+* •	Download the elasticsearch-hadoop *uber* jar file from the Elastic site, uncompress it (as it is a zip file), and copy it to the `$SPARK_HOME/jars` folder on all the cluster instances:
+   ```bash
+   wget http://download.elastic.co/hadoop/elasticsearch-hadoop-5.6.1.zip
+   unzip elasticsearch-hadoop-5.6.1.zip
+   cp elasticsearch-hadoop-5.6.1/dist/elasticsearch-hadoop-5.6.1.jar $SPARK_HOME/jars
+   rm elasticsearch-hadoop-5.6.1.zip
+   rm -rf elasticsearch-hadoop-5.6.1/
+   ```
+   The *uber* jar can be also downloaded from maven:
+   ```bash
+   wget http://central.maven.org/maven2/org/elasticsearch/elasticsearch-hadoop/5.6.1/elasticsearch-hadoop-5.6.1.jar
+   mv elasticsearch-hadoop-5.6.1.jar $SPARK_HOME/jars
+   ```
+   With any of the previous options, the jar file can be placed anywhere and included on the driver and executor classpaths by means of the `--jars` option.
+* However, the simplest possibility is to use the `--packages` option when calling the `spark-shell`, `spark-submit`, or `pyspark` commands, providing [Maven coordinates](https://mvnrepository.com/artifact/org.elasticsearch/elasticsearch-spark-20_2.11/5.6.1) of jars (`groupId:artifactId:version`) to include on the driver and executor classpaths:
+   ```bash
+   pyspark --master spark://<master-ip-address>:7077 --packages org.elasticsearch:elasticsearch-spark-20_2.11:5.6.1
+   ```
 
-It is also possible to install the *uber* jar, this time from the Elastic site:
-```bash
-wget http://download.elastic.co/hadoop/elasticsearch-hadoop-5.6.1.zip
-unzip elasticsearch-hadoop-5.6.1.zip
-cp elasticsearch-hadoop-5.6.1/dist/elasticsearch-hadoop-5.6.1.jar $SPARK_HOME/jars
-rm elasticsearch-hadoop-5.6.1.zip
-rm -rf elasticsearch-hadoop-5.6.1/
-```
-
-It can be also downloaded from maven:
-```bash
-wget http://central.maven.org/maven2/org/elasticsearch/elasticsearch-hadoop/5.6.1/elasticsearch-hadoop-5.6.1.jar
-mv elasticsearch-hadoop-5.6.1.jar $SPARK_HOME/jars
-```
 ## Elasticsearch configuration in the Spark cluster
 First, the Elastic Stack instance name must be registered on all the instances of the HDFS cluster (in the Elastic Stack instance as well) by executing the following command:
 
@@ -392,9 +399,7 @@ As described in *[Integrating Hadoop and Elasticsearch – Part 2 – Writing to
 * `es.nodes.client.only`: If the Elasticsearch cluster allows access only through client nodes, then this setting is necessary; defaults to *False*.
 
 Other settings must be also configured (see [here](https://discuss.elastic.co/t/sparkstreaming-to-elasticesrahc-error-networkclient-connection-timed-out-connect/45834/2)):
-* `es.nodes.discovery`: to use the only the nodes in the Elasticsearch cluster given in `es.nodes` setting for metadata queries. Defaults to *True*. It the project environment it must be set to *False*.
-
-And [here]()
+* `es.nodes.discovery`: to use the only the nodes in the Elasticsearch cluster given in `es.nodes` setting for metadata queries. Defaults to *True*. In the project environment it must be set to *False*.
 
 Thus, the notebooks running in the Spark cluster must define the following configuration in order to enable writing on the Elasticsearch cluster:
 ```python

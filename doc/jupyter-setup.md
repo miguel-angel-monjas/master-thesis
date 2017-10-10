@@ -9,18 +9,19 @@
 ----
 
 ## Python installation
-An Anaconda Python distribution is installed on master and slave instances. It installs not only Python 2.7 but a number of valuable Python packages and Jupyter Notebook as well:
+An [Anaconda](https://www.anaconda.com/distribution/) Distribution (4.4.0) is installed on master and slave instances. It installs not only Python 2.7 but a number of valuable Python packages and Jupyter Notebook as well:
 
 ```bash
-wget https://repo.continuum.io/archive/Anaconda2-4.2.0-Linux-x86_64.sh
-sudo /bin/bash Anaconda2-4.2.0-Linux-x86_64.sh -b -p /usr/local/anaconda
+wget https://repo.continuum.io/archive/Anaconda2-4.4.0-Linux-x86_64.sh
+sudo /bin/bash Anaconda2-4.4.0-Linux-x86_64.sh -b -p /usr/local/anaconda
 sudo chown -R ubuntu:ubuntu /usr/local/anaconda/
-rm Anaconda2-4.2.0-Linux-x86_64.sh
+rm Anaconda2-4.4.0-Linux-x86_64.sh
 sudo /usr/local/anaconda/bin/conda update -y conda
 ```
-Additionally, we install several Python packages:
+Additionally, we install several Python packages from the Conda cloud:
 * Although not actually needed in the chosen configuration, [`findspark`](https://github.com/minrk/findspark) is installed (`findspark` is a Python module that allows to call `pyspark` from Python scripts; as we plan to trigger notebook execution by running the `pyspark` command, it is not actually needed).
-* In order to enhance visualization, `seaborn` can be installed as well.
+* In order to enhance visualization, [`seaborn`](https://seaborn.pydata.org/) can be installed as well.
+* The necessary packages to save notebooks as PDF files.
 
 ```bash
 sudo /usr/local/anaconda/bin/conda install -c conda-forge findspark -y
@@ -28,14 +29,6 @@ sudo /usr/local/anaconda/bin/conda install -c anaconda seaborn -y
 sudo /usr/local/anaconda/bin/conda install -c anaconda-nb-extensions nbbrowserpdf -y
 
 ```
-Finally, a configuration file for Jupyter Notebook is created (the file is needed for enabling access to the notebook server, see [Jupyter Notebook execution](#jupyter-notebook-execution)):
-
-```bash
-sudo /usr/local/anaconda/bin/jupyter notebook --generate-config -y
-```
-
-As a result, `~/.jupyter/jupyter_notebook_config.py` is created.
-
 Next, the following environment variables must be set in the `.bashrc` file under `/home/ubuntu` (both on master and slave nodes):
 ```bash
 echo '
@@ -80,9 +73,15 @@ pyspark --master spark://<master-floating-ip-address>:7077
 ```
 
 ## Jupyter Notebook configuration
-The default Jupyter Notebook configuration must be updated in order to:
+First, a configuration file for Jupyter Notebook must be created (the file is needed for enabling access to the Notebook server):
+
+```bash
+sudo /usr/local/anaconda/bin/jupyter notebook --generate-config -y
+```
+
+As a result, `~/.jupyter/jupyter_notebook_config.py` is created. However, it the Jupyter Notebook configuration must be updated in order to:
 * Know which folder for notebooks and kernels must be used.
-* Enable access to the Notebook server in hosts other than `localhost`. By default the Notebook server only listens on the `localhost` network interface. To enable connection from other clients, the Notebook server to listen on all network interfaces and not open the browser.
+* Enable access to the Notebook server from clients other than `localhost`. By default the Notebook server only listens on the `localhost` network interface. To enable connection from any client, the Notebook server must listen on all network interfaces and not open the browser.
 * Define the port the Notebook server should listen to. A known, fixed port is set: 9999.
 
 The folder that hosts notebooks and kernels is created:
@@ -90,14 +89,14 @@ The folder that hosts notebooks and kernels is created:
 mkdir ~/notebooks
 ```
 
-Next, the Jupyter Notebook configuration file, `~/.jupyter/jupyter_notebook_config.py`, is be updated to use the just created folder and for enable the access from external IP addresses to the notebooks. Four properties are activated and set: `c.NotebookApp.notebook_dir`, `c.NotebookApp.ip`, `c.NotebookApp.open_browser`, and `c.NotebookApp.port`:
+Next, the Jupyter Notebook configuration file, `~/.jupyter/jupyter_notebook_config.py`, is updated to use the just created folder and for enable the access from external IP addresses to the notebooks. Four properties are activated and set: `c.NotebookApp.notebook_dir`, `c.NotebookApp.ip`, `c.NotebookApp.open_browser`, and `c.NotebookApp.port`:
 ```bash
 sed -i "s/#c.NotebookApp.notebook_dir = u''/c.NotebookApp.notebook_dir = u'\/home\/ubuntu\/notebooks'/" ~/.jupyter/jupyter_notebook_config.py
 sed -i "s/#c.NotebookApp.ip = 'localhost'/c.NotebookApp.ip = '*'/" ~/.jupyter/jupyter_notebook_config.py
 sed -i "s/#c.NotebookApp.open_browser = True/c.NotebookApp.open_browser = False/" ~/.jupyter/jupyter_notebook_config.py
 sed -i "s/#c.NotebookApp.port = 8888/c.NotebookApp.port = 9999/" ~/.jupyter/jupyter_notebook_config.py
 ```
-The configuration above enables a public Notebook server. There is no built-in security and that is acceptable as a private Openstack cloud is being used. In open environments, the server must be secured with a password and TLS (see [Running a public notebook server](http://jupyter-notebook.readthedocs.io/en/latest/public_server.html#running-a-public-notebook-server)).
+The configuration above enables a public Notebook server. There is no built-in security and that is acceptable as a private Openstack cloud is being used. In open environments, the server must be secured with a password and TLS (see [Running a public Notebook server](http://jupyter-notebook.readthedocs.io/en/latest/public_server.html#running-a-public-notebook-server)).
 
 Finally, Spark must be configured to run a notebook when `pyspark` is invoked.
 

@@ -1,5 +1,5 @@
 # Running Zeppelin notebooks on a Spark Standalone cluster
-Apache Zeppelin is another web-based Notebook that supports a variety of languages and back-end technologies. It is especially useful the possibility to combine several languages y a same notebook (for instance, `shell` to run HDFS commands and `python` to execute tasks on `pyspark`). However, the last release at the momment to compile this guide ([Zeppelin 0.7.2](https://zeppelin.apache.org/docs/0.7.2/install/install.html)) does not support Spark 2.2.*. This is the main reason not to use the more recent Spark version.
+Apache Zeppelin is another web-based Notebook that supports a variety of languages and back-end technologies. It is especially useful the possibility to combine several languages y a same notebook (for instance, `shell` to run HDFS commands and `python` to execute tasks on `pyspark`). However, the last available release when compiling this guide ([Zeppelin 0.7.2](https://zeppelin.apache.org/docs/0.7.2/install/install.html)) does not support Spark 2.2.*. This is the main reason not to use the more recent Spark version.
 
 * [Pre-requisites](#pre-requisites)
 * [Zeppelin installation](#zeppelin-installation)
@@ -63,9 +63,6 @@ export HADOOP_CONF_DIR=$HADOOP_CONF_DIR
 export ZEPPELIN_PORT=8180
 " >> $ZEPPELIN_CONF_DIR/zeppelin-env.sh
 ```
-
-ZEPPELIN_NOTEBOOK_DIR
-ZEPPELIN_PORT 8180
 
 ## Notebook start and stop
 Verification of a right Zeppelin installation can be done by typing `$ZEPPELIN_HOME/bin/zeppelin-daemon.sh start`. Next, go to `http://<zeppelin-node-ip-address>:8180/` with a web browser. The result should be similar to this:
