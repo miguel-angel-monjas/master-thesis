@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import json
 from time import time, sleep
 from random import randint, choice
 
@@ -19,7 +19,7 @@ def main ():
         exit(0)
 
     while True:
-        cdr_queu = []
+        cdr_queue = []
         for i in range (100):
             now = int(round(time()))
             start = now + randint(0, 30)
@@ -27,11 +27,11 @@ def main ():
             cell = choice(cells)
             start_time = [start, cell, 'start']
             end_time = [end, cell, 'end']
-            cdr_queu.append(start_time)
-            cdr_queu.append(end_time)
-        cdr_queu.sort(key=lambda x: x[0])
+            cdr_queue.append(start_time)
+            cdr_queue.append(end_time)
+        cdr_queue.sort(key=lambda x: x[0])
         start_tick = now = int(round(time()))
-        for item in cdr_queu:
+        for item in cdr_queue:
             message = ';'.join([str(token) for token in item])
             sleep(item[0]-start_tick)
             print message

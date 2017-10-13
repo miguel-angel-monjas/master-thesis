@@ -1,0 +1,16 @@
+[
+  {
+    "_id": "AV7kQYSB47Do56NVZvKK",
+    "_type": "visualization",
+    "_source": {
+      "title": "Cell load time series",
+      "visState": "{\"title\":\"Cell load time series\",\"type\":\"metrics\",\"params\":{\"axis_formatter\":\"number\",\"axis_position\":\"left\",\"id\":\"b34c0570-a885-11e7-ba2d-b953e884d3fe\",\"index_pattern\":\"cell_info*\",\"interval\":\"1d\",\"series\":[{\"axis_position\":\"right\",\"chart_type\":\"line\",\"color\":\"rgba(104,188,0,1)\",\"fill\":0.5,\"formatter\":\"number\",\"id\":\"b34c2c80-a885-11e7-ba2d-b953e884d3fe\",\"line_width\":1,\"metrics\":[{\"id\":\"b34c2c81-a885-11e7-ba2d-b953e884d3fe\",\"type\":\"max\",\"field\":\"load\"}],\"point_size\":1,\"seperate_axis\":0,\"split_mode\":\"terms\",\"stacked\":\"none\",\"terms_field\":\"cell\",\"terms_order_by\":\"b34c2c81-a885-11e7-ba2d-b953e884d3fe\",\"terms_size\":\"20\"}],\"show_legend\":1,\"time_field\":\"date\",\"type\":\"timeseries\",\"background_color_rules\":[{\"id\":\"da320f40-a885-11e7-ba2d-b953e884d3fe\"}],\"bar_color_rules\":[{\"id\":\"db965a30-a885-11e7-ba2d-b953e884d3fe\"}],\"gauge_color_rules\":[{\"id\":\"dcc76020-a885-11e7-ba2d-b953e884d3fe\"}],\"gauge_width\":10,\"gauge_inner_width\":10,\"gauge_style\":\"half\"},\"aggs\":[],\"listeners\":{}}",
+      "uiStateJSON": "{}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"query\":{\"match_all\":{}},\"filter\":[]}"
+      }
+    }
+  }
+]
