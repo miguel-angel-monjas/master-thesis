@@ -3,16 +3,18 @@
 import json
 from time import time, sleep
 from random import randint, choice
+import threading
 
 from kafka import KafkaProducer
 
 KAFKA_IP_ADDRESS = '10.10.10.66:9092'
 cells = ['23', '3456', '522', '10', '444', '10456', '23', '24', '25', '33', '99', '105', '1']
+input_topic = 'cdr'
 
-def main ():
-    input_topic="cdr"
+def worker(order):
+    print order
     try:
-        producer = KafkaProducer(bootstrap_servers=KAFKA_IP_ADDRESS)
+        #producer = KafkaProducer(bootstrap_servers=KAFKA_IP_ADDRESS)
         pass
     except Exception as e:
         print "Kafka not found. Shutting down"
@@ -36,7 +38,15 @@ def main ():
             sleep(item[0]-start_tick)
             print message
             start_tick = item[0]
-            producer.send(input_topic, bytes(message))
+            #producer.send(input_topic, bytes(message))
+    return
+
+def main ():
+    threads = []
+    for i in range(10):
+        t = threading.Thread(target=worker, args=(i,))
+        threads.append(t)
+        t.start()
 
 if __name__ == "__main__":
     main()
