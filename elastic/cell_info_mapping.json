@@ -1,0 +1,20 @@
+{
+	"cell_info": {
+		"mappings": {
+			"cell_load": {
+				"properties": {
+					"cell": {
+						"type": "keyword"
+					},
+					"date": {
+						"type": "date",
+						"format": "epoch_second"
+					},
+					"load": {
+						"type": "integer"
+					}
+				}
+			}
+		}
+	}
+}
