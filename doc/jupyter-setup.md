@@ -134,7 +134,7 @@ The execution of Jupyter Notebook is triggered when `pyspark` is run: an output 
 
 At the same time, the Jupyter Notebook server is accessible in `http://<master-floating-ip-address>:9999/`:
 
-![Spark Notebook](./spark-notebook-empty.PNG)
+![Spark Notebook](./images/spark-notebook-empty.PNG)
 
 Once the *kernel* is loaded, it is possible to start to create and execute notebooks. The Jupyter Notebook server can be terminated by typing CTRL-C.
 

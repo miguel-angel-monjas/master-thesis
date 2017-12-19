@@ -117,7 +117,7 @@ If you try to run `pyspark`, an error will be raised  (sort of "Python not found
 
 Before leaving the shell, it is possible to verify the status of the Spark context created by running the shell in `http://<master-floating-ip-address>:4040/`:
 
-![Spark Context UI](./spark-context-shell-idle.PNG)
+![Spark Context UI](./images/spark-context-shell-idle.PNG)
 
 It is important to note that from release 2.1.0 onwards, if the environment variable `$HADOOP_CONF_DIR` is set, the execution of `spark-shell` will throw an error (`java.lang.IllegalArgumentException: Error while instantiating 'org.apache.spark.sql.hive.HiveSessionStateBuilder'`). In testing situations with no HDSF cluster started, `$HADOOP_CONF_DIR` should be unset:
 ```bash
@@ -156,7 +156,7 @@ And a `Worker` process in each slave instance.
 
 The status of the Spark cluster can be verified in `http://<master-floating-ip-address>:8080/`:
 
-![Spark Standalone Cluster UI](./spark-standalone-idle.PNG)
+![Spark Standalone Cluster UI](./images/spark-standalone-idle.PNG)
 
 Three different Workers must appear, each of them in the private IP address assigned to each instance (the Spark context UI is not available). No applications (running or completed) are listed and no Spark context UI is available.
 
@@ -196,7 +196,7 @@ Type :help for more information.
 
 If we verify the status of the Spark cluster (in `http://<master-floating-ip-address>:8080/`):
 
-![Spark Standalone Cluster UI](./spark-standalone-shell.PNG)
+![Spark Standalone Cluster UI](./images/spark-standalone-shell.PNG)
 
 We find the existing *Workers* listed in the previous screenshot **and** the Spark shell as a new *Running Application*. At the same time, the Spark context UI (`http://<master-floating-ip-address>:4040/`) is available as well.
 

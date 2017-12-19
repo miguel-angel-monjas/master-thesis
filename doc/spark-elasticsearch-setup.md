@@ -246,7 +246,7 @@ Creating logstash ... done
 ```
 It is possible to verify the right installation of the Elastic Stack by accessing `http://<elk-floating-ip-address>:5601`. The Kibana web UI should be shown. It is possible to verify the right initialization of the containers by typing `docker ps` and verifying that all the containers are running or to inspects the logs by typing `docker logs elasticsearch`, `docker logs kibana`... (Kibana is usually the component that takes more time to start: *Optimizing and caching bundles for kibana, stateSessionStorageRedirect, timelion and status_page. This may take a few minutes*):
 
-![Main Kibana UI home](./kibana-discover.PNG)
+![Main Kibana UI home](./images/kibana-discover.PNG)
 
 ## Elasticdump installation in the host instance
 In the following sections, different approaches to save the results of Spark computations in Elasticsearch will be provided. One of them is based on `elasticdump`. Its installation in Ubuntu can be troublesome as `elasticdump` relies on `nodejs` and the installation of the latter in the usual way (that is, by running ```sudo apt-get install nodejs npm -y```) ends up in an old `nodejs` release, not able to run `elasticdump`. Based on the official [NodeSource](https://nodesource.com/blog/installing-node-js-tutorial-ubuntu/) and [elasticdump](https://www.npmjs.com/package/elasticdump) documentation:

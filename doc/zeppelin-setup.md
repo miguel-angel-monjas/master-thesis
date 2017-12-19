@@ -67,7 +67,7 @@ export ZEPPELIN_PORT=8180
 ## Notebook start and stop
 Verification of a right Zeppelin installation can be done by typing `$ZEPPELIN_HOME/bin/zeppelin-daemon.sh start`. Next, go to `http://<zeppelin-node-ip-address>:8180/` with a web browser. The result should be similar to this:
 
-![Main Zeppelin UI home](./zeppelin-home.PNG)
+![Main Zeppelin UI home](./images/zeppelin-home.PNG)
 
 To stop it, type `$ZEPPELIN_HOME/bin/zeppelin-daemon.sh stop`
 
