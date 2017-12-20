@@ -7,8 +7,6 @@ In [Setting up an HDFS cluster](./hadoop-cluster-setup.md) a description on how 
 * [Additional Spark configuration](#additional-spark-configuration)
 * [Spark cluster slaves configuration](#spark-cluster-slaves-configuration)
 * [Cluster start and stop](#cluster-start-and-stop)
-* [Python and Jupyter Notebook installation](#python-and-jupyter-notebook-installation)
-* [Jupyter Notebook configuration](#jupyter-notebook-configuration)
 * [Key take-aways](#key-take-aways)
 * [See also](#see-also)
 
@@ -207,7 +205,6 @@ Installation and deployment of Spark is supposed to be simple and straightforwar
 * As mentioned, the default Hive configuration leads to the creation of a `derby.log` file and a `metastore_db` folder in the location where the shell is run. As mentioned above, a suitable location have to be configured.
 
 ## See also
-* [Deploying YARN on a Hadoop cluster](./yarn-cluster-setup.md)
 * [Running Jupyter notebooks on a Spark Standalone cluster](./jupyter-setup.md)
 * [Running Zeppelin notebooks on a Spark Standalone cluster](./zeppelin-setup.md)
-* [Running a Spark cluster on YARN](./spark-yarn-cluster-setup.md)
+* [Saving data from Spark to Elasticsearch indices](./spark-elasticsearch-setup.md)

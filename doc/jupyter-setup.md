@@ -9,7 +9,7 @@
 ----
 
 ## Python installation
-An [Anaconda](https://www.anaconda.com/distribution/) Distribution (4.4.0) is installed on master and slave instances. It installs not only Python 2.7 but a number of valuable Python packages and Jupyter Notebook as well:
+An [Anaconda Distribution](https://www.anaconda.com/distribution/) (4.4.0) is installed on master and slave instances. It installs not only Python 2.7 but a number of valuable Python packages and Jupyter Notebook as well:
 
 ```bash
 wget https://repo.continuum.io/archive/Anaconda2-4.4.0-Linux-x86_64.sh
@@ -54,7 +54,7 @@ Please check out: http://continuum.io/thanks and https://anaconda.org
 >>>
 ```
 
-Next, verification of `pyspark` availability is carried out. The output should be similar to this:
+Next, verification of `pyspark` availability is carried out. The output of the command should be similar to this:
 ```bash
 Welcome to
       ____              __

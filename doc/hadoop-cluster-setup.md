@@ -296,5 +296,5 @@ Works such as *[Spark in action](https://www.manning.com/books/spark-in-action)*
 * The *NameNode* is a single point of failure in the HDFS cluster. Hosting the *NameNode* and a *DataNode* in the same instance may translate into resource shortage in the *NameNode* and the usual `Name node is in safe mode. Resources are low on NN. Please add or free up more resources then turn off safe mode manually` error message. Although the desployment started initially with a *DataNode* on the master instance, it was finally removed.
 
 ## See also
-* [Data load](./data-load.md)
+* [Loading data to an HDFS cluster](./data-load.md)
 * [Running a Spark Standalone cluster](./spark-standalone-cluster-setup.md)
