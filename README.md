@@ -28,7 +28,7 @@ The dynamic scenario is described by the figure below:
 ![Dynamic scenario](./doc/images/Dynamic-Technology.PNG)
 
 The project comprises the following deliverables:
-* The actual [master's thesis](./Proyecto fin de máster Miguel-Angel Monjas v0.8.docx).
+* The actual [master's thesis](./Proyecto%20fin%20de%20máster%20Miguel-Angel Monjas%20v0.81.docx).
 * The [documentation associated to the infrastructure deployment](./doc/infrastructure.md), as a folder of this repo.
 * The `elastic` folder in this repo which stores all outcomes related to the Elastic Stack functionalities: Elasticsearch indices, Logstash filters, Kibana objects (visualizations and dashboards).
 * `docker-elastic`, a submodule of this repo, which provides the Docker-related files needed to launch the Elastic Stack components.

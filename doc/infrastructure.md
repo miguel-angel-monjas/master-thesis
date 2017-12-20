@@ -8,4 +8,4 @@ Infrastructure deployment has been a large part of the project. As part of it, t
 6. [Saving data from Spark to Elasticsearch indices](./spark-elasticsearch-setup.md)
 7. [Setting up Kafka](./kafka-setup.md)
 
-All the configuration files can be found in a the [conf folder](../conf/).
+All the configuration files can be found in a the [conf folder](../conf/    ).
