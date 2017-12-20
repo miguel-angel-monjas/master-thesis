@@ -43,5 +43,6 @@ The list of instances can be seen in the Openstack UI:
 ![Openstack UI](./images/openstack-instances.PNG)
 
 ## See also
+* [Infrastructure deployment index](./infrastructure.md)
 * [Setting up an HDFS cluster](./hadoop-cluster-setup.md).
 * [Running a Standalone Spark cluster](./spark-standalone-cluster-setup.md).

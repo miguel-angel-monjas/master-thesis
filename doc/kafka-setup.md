@@ -37,4 +37,5 @@ As with the Elastic Stack case, interworking with Kafka from Spark Streaming app
 
 It is also possible to download the jar file and copy it to the `$SPARK_HOME/jars` folder.
 
-
+## See also
+* [Infrastructure deployment index](./infrastructure.md)

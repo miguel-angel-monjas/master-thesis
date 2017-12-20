@@ -146,4 +146,5 @@ pyspark --master spark://<master-ip-address>:7077
 ```
 
 ## See also
+* [Infrastructure deployment index](./infrastructure.md)
 * [Running Zeppelin notebooks on a Spark Standalone cluster](./zeppelin-setup.md)

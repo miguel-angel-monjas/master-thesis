@@ -52,5 +52,6 @@ hdsf-slave-2
 ```
 
 ## See also
+* [Infrastructure deployment index](./infrastructure.md)
 * [Setting up an HDFS cluster](./hadoop-cluster-setup.md).
 * [Running a Spark Standalone cluster](./spark-standalone-cluster-setup.md).

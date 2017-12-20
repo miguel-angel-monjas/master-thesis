@@ -205,6 +205,7 @@ Installation and deployment of Spark is supposed to be simple and straightforwar
 * As mentioned, the default Hive configuration leads to the creation of a `derby.log` file and a `metastore_db` folder in the location where the shell is run. As mentioned above, a suitable location have to be configured.
 
 ## See also
+* [Infrastructure deployment index](./infrastructure.md)
 * [Running Jupyter notebooks on a Spark Standalone cluster](./jupyter-setup.md)
 * [Running Zeppelin notebooks on a Spark Standalone cluster](./zeppelin-setup.md)
 * [Saving data from Spark to Elasticsearch indices](./spark-elasticsearch-setup.md)

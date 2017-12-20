@@ -72,4 +72,5 @@ Verification of a right Zeppelin installation can be done by typing `$ZEPPELIN_H
 To stop it, type `$ZEPPELIN_HOME/bin/zeppelin-daemon.sh stop`
 
 ## See also
+* [Infrastructure deployment index](./infrastructure.md)
 * [Running Jupyter notebooks on a Spark Standalone cluster](./jupyter-setup.md)

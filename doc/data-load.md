@@ -100,5 +100,6 @@ hdfs dfs -put MCCMNC.csv /data
 Finally, the CSV files are turned into the Parquet format in a similar way to that of the main dataset.
 
 ## See also
+* [Infrastructure deployment index](./infrastructure.md)
 * [Setting up an HDFS cluster](doc/hadoop-cluster-setup.md).
 * [Setting up and running a Standalone Spark cluster](doc/spark-standalone-cluster-setup.md).

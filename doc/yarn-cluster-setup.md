@@ -85,7 +85,7 @@ echo '<?xml version="1.0"?>
 ```
 
 It is important to note that specific values must be set for the properties `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`. 
-* `yarn.nodemanager.resource.memory-mb`. It is the amount of physical memory, in MB, that can be allocated for containers. As the instances’ RAM in the considered environment is 32GB, it can be considered that about 8GB are used by the operating system and other tasks, 1GB each for the HDFS *DataNode* and the YARN *NodeManager*, so that 22GB can be a good fit (the master instance should consider also the HDFS *NameNode* and the YARN *ResourceManager* and provide about 20 GB instead). Default value is 8192.
+* `yarn.nodemanager.resource.memory-mb`. It is the amount of physical memory, in MB, that can be allocated for containers. As the instancesï¿½ RAM in the considered environment is 32GB, it can be considered that about 8GB are used by the operating system and other tasks, 1GB each for the HDFS *DataNode* and the YARN *NodeManager*, so that 22GB can be a good fit (the master instance should consider also the HDFS *NameNode* and the YARN *ResourceManager* and provide about 20 GB instead). Default value is 8192.
 * `yarn.nodemanager.resource.cpu-vcores`. It is the number of vcores that can be allocated for containers. As the instances have 32 vCPU's, and considering that the operating system uses one of them and one each for the HDFS *DataNode* and the YARN *NodeManager*, 29 seems to be a good choice (27 is used in the master). Default value is 8.
 
 Although not followed, [the official Cloudera documentation on YARN tuning](https://www.cloudera.com/documentation/enterprise/5-3-x/topics/cdh_ig_yarn_tuning.html) can provide an overview of the optimization of YARN clusters. In fact, if proper values of the properties above are not set, *NodeManagers* will not be authorized to register and the cluster will not be deployed.
@@ -128,4 +128,5 @@ Some considerations when setting up an HDFS cluster have been already mentioned.
 * Careful dimensioning of the cluster is required. If small instance flavors are used, *NodeManagers* will not be able to gather enough resources and will be rejected at registration. Thus, it is necessary to use instances with a certain amount of memory and properly configure `yarn.nodemanager.resource.memory-mb` and `yarn.nodemanager.resource.cpu-vcores`.
 
 ## See also
+* [Infrastructure deployment index](./infrastructure.md)
 * [Running a Spark cluster on YARN](./spark-yarn-cluster-setup.md).
