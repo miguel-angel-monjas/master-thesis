@@ -1,4 +1,4 @@
-# Running a Spark cluster in Standalone mode
+# Running a Spark cluster in Standalone mode on an HDFS cluster
 In [Setting up an HDFS cluster](./hadoop-cluster-setup.md) a description on how to set up an HDFS cluster was provided. It is made of a master node (hosting an HDFS *NameNode*) and three slaves (running an HDFS *DataNode* each). Here, a description on how to deploy a Spark cluster in Standalone mode on top of it is provided. As YARN is not used, no dependencies between the HDFS and the Spark clusters will exist and HDFS will simply provide storage capabilities. The official documentation can be accessed [here](https://spark.apache.org/docs/latest/spark-standalone.html).
 
 * [Pre-requisites](#pre-requisites)
@@ -13,7 +13,7 @@ In [Setting up an HDFS cluster](./hadoop-cluster-setup.md) a description on how 
 ----
 
 ## Pre-requisites
-Hadoop 2.7.4 is installed and a cluster is set up as described in [Setting up an HDFS cluster](./spark-cluster-management.md).
+Hadoop 2.7.4 is installed and a cluster is set up as described in [Setting up an HDFS cluster](./spark-cluster-management.md). If no HDSF support is needed, it is possible just to [install Java](./java-setup.md) in all the cluster instances and skip the HDFS installation.
 
 ## Spark installation on all instances
 A Spark release compatible with Hadoop 2.7.4 and Zeppelin 0.7.2, [Spark 2.0.2](https://spark.apache.org/releases/spark-release-2-0-2.html), is chosen (see a discussion on the version [below](#key-take-aways)). Use a symbolic link to easily upgrade or change versions if wished.

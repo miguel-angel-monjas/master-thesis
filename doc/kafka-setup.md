@@ -1,11 +1,16 @@
-#Setting up Kafka
+# Setting up Kafka
 Apache Kafka is a distributed publish-subscribe messaging system that is designed to be fast, scalable, and durable. Kafka maintains feeds of messages in so-called topics. Producers write data to topics and consumers read from topics. These guidelines will support a scenario where Kafka is used to to provide inputs to Spark Streaming applications and to deliver the outputs of said applications to Elasticsearch, so that they can be visualized.
 
+* [Pre-requisites](#pre-requisites)
+* [Kafka deployment](#kafka-deployment)
+* [See also](#see-also)
+
 ----
+
 ## Pre-requisites
 The deployment of Kafka on an Openstack instance will be carried out by means of Docker containers. Thus, Docker CE and Docker Compose have to be installed before the containers can be created. It can be done by executing [`docker_install.sh`](https://github.com/miguel-angel-monjas/master-thesis/blob/master/elastic/docker_install.sh), a shell script availabe in the `elastic` folder in the Github repo. 
 
-##Kafka deployment
+## Kafka deployment
 The deployment of Kafka on an Openstack instance is carried out by using a Docker container that runs the ubiquitous [`spotify/kafka`](https://hub.docker.com/r/spotify/kafka/) image. The following command can be run:
 `docker run -d -p 2181:2181 -p 9092:9092 --name kafka_container --env ADVERTISED_HOST=<kafka-ip-address> --env ADVERTISED_PORT=9092 spotify/kafka`
 
