@@ -18,17 +18,7 @@ sudo chown -R ubuntu:ubuntu /usr/local/anaconda/
 rm Anaconda2-4.4.0-Linux-x86_64.sh
 sudo /usr/local/anaconda/bin/conda update -y conda
 ```
-Additionally, we install several Python packages from the Conda cloud:
-* Although not actually needed in the chosen configuration, [`findspark`](https://github.com/minrk/findspark) is installed (`findspark` is a Python module that allows to call `pyspark` from Python scripts; as we plan to trigger notebook execution by running the `pyspark` command, it is not actually needed).
-* In order to enhance visualization, [`seaborn`](https://seaborn.pydata.org/) can be installed as well.
-* The necessary packages to save notebooks as PDF files.
 
-```bash
-sudo /usr/local/anaconda/bin/conda install -c conda-forge findspark -y
-sudo /usr/local/anaconda/bin/conda install -c anaconda seaborn -y
-sudo /usr/local/anaconda/bin/conda install -c anaconda-nb-extensions nbbrowserpdf -y
-
-```
 Next, the following environment variables must be set in the `.bashrc` file under `/home/ubuntu` (both on master and slave nodes):
 ```bash
 echo '
@@ -42,6 +32,18 @@ export PATH=$ANACONDA_HOME/bin:$PATH
 The `.bashrc` file is reloaded:
 ```bash
 source ~/.bashrc
+```
+
+Additionally, we install several Python packages from the Conda cloud:
+* Although not actually needed in the chosen configuration, [`findspark`](https://github.com/minrk/findspark) is installed (`findspark` is a Python module that allows to call `pyspark` from Python scripts; as we plan to trigger notebook execution by running the `pyspark` command, it is not actually needed).
+* In order to enhance visualization, [`seaborn`](https://seaborn.pydata.org/) can be installed as well.
+* The necessary packages to save notebooks as PDF files.
+
+```bash
+sudo /usr/local/anaconda/bin/conda install -c conda-forge findspark -y
+sudo /usr/local/anaconda/bin/conda install -c anaconda seaborn -y
+sudo /usr/local/anaconda/bin/conda install -c anaconda-nb-extensions nbbrowserpdf -y
+
 ```
 
 Verification of a right Python 2.7 installation can be done by typing `python`. The output should be similar to this:
@@ -95,17 +97,17 @@ sed -i "s/#c.NotebookApp.notebook_dir = u''/c.NotebookApp.notebook_dir = u'\/hom
 sed -i "s/#c.NotebookApp.ip = 'localhost'/c.NotebookApp.ip = '*'/" ~/.jupyter/jupyter_notebook_config.py
 sed -i "s/#c.NotebookApp.open_browser = True/c.NotebookApp.open_browser = False/" ~/.jupyter/jupyter_notebook_config.py
 sed -i "s/#c.NotebookApp.port = 8888/c.NotebookApp.port = 9999/" ~/.jupyter/jupyter_notebook_config.py
-```
-The configuration above enables a public Notebook server. There is no built-in security and that is acceptable as a private Openstack cloud is being used. In open environments, the server must be secured with a password and TLS (see [Running a public Notebook server](http://jupyter-notebook.readthedocs.io/en/latest/public_server.html#running-a-public-notebook-server)).
-
-Finally, Spark must be configured to run a notebook when `pyspark` is invoked.
-
-```bash
+``````bash
 echo 'export PYSPARK_PYTHON=$ANACONDA_HOME/bin/python
 export PYSPARK_DRIVER_PYTHON=jupyter
 export PYSPARK_DRIVER_PYTHON_OPTS="notebook"
 ' >> $SPARK_CONF_DIR/spark-env.sh
 ```
+The configuration above enables a public Notebook server. There is no built-in security and that is acceptable as a private Openstack cloud is being used. In open environments, the server must be secured with a password and TLS (see [Running a public Notebook server](http://jupyter-notebook.readthedocs.io/en/latest/public_server.html#running-a-public-notebook-server)).
+
+Finally, Spark must be configured to run a notebook when `pyspark` is invoked.
+
+
 Mind that there are other ways to run notebooks when `pyspark` is involved and enabling access from external IP addresses to the Notebook server. Provided that only `c.NotebookApp.notebook_dir` is activated in `~/.jupyter/jupyter_notebook_config.py` the remaining Jupyter configuration properties can be set in `$SPARK_CONF_DIR/spark-env.sh`:
 ```bash
 echo '
