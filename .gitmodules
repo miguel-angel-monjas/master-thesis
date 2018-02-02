@@ -4,3 +4,6 @@
 [submodule "docker-elastic"]
 	path = docker-elastic
 	url = https://github.com/miguel-angel-monjas/docker-elastic.git
+[submodule "wmcommons-helpers"]
+	path = wmcommons-helpers
+	url = https://github.com/miguel-angel-monjas/wmcommons-helpers.git

@@ -43,7 +43,6 @@ Additionally, we install several Python packages from the Conda cloud:
 sudo /usr/local/anaconda/bin/conda install -c conda-forge findspark -y
 sudo /usr/local/anaconda/bin/conda install -c anaconda seaborn -y
 sudo /usr/local/anaconda/bin/conda install -c anaconda-nb-extensions nbbrowserpdf -y
-
 ```
 
 Verification of a right Python 2.7 installation can be done by typing `python`. The output should be similar to this:
@@ -56,7 +55,13 @@ Please check out: http://continuum.io/thanks and https://anaconda.org
 >>>
 ```
 
-Next, verification of `pyspark` availability is carried out. The output of the command should be similar to this:
+Next, Spark is configured to use Python from the Anaconda distribution:
+
+```bash
+echo 'export PYSPARK_PYTHON=$ANACONDA_HOME/bin/python' >> $SPARK_CONF_DIR/spark-env.sh
+```
+
+Finally, verification of `pyspark` availability is carried out. The output of the command should be similar to this:
 ```bash
 Welcome to
       ____              __
@@ -69,13 +74,21 @@ Using Python version 2.7.12 (default, Jul  2 2016 17:42:40)
 SparkSession available as 'spark'.
 ```
 
-Finally, a similar verification, but against the Spark Standalone cluster, can be done:
+A similar verification, but against the Spark Standalone cluster, can be carried out:
 ```bash
 pyspark --master spark://<master-floating-ip-address>:7077
 ```
 
 ## Jupyter Notebook configuration
-First, a configuration file for Jupyter Notebook must be created (the file is needed for enabling access to the Notebook server):
+First, Spark must be configured so that, when running `pyspark`, the Jupyter Notebook server is launched.
+
+```bash
+echo 'export PYSPARK_DRIVER_PYTHON=jupyter
+export PYSPARK_DRIVER_PYTHON_OPTS="notebook"
+' >> $SPARK_CONF_DIR/spark-env.sh
+```
+
+Next, a configuration file for Jupyter Notebook must be created (the file is needed for enabling access to the Notebook server):
 
 ```bash
 sudo /usr/local/anaconda/bin/jupyter notebook --generate-config -y
@@ -91,18 +104,14 @@ The folder that hosts notebooks and kernels is created:
 mkdir ~/notebooks
 ```
 
-Next, the Jupyter Notebook configuration file, `~/.jupyter/jupyter_notebook_config.py`, is updated to use the just created folder and for enable the access from external IP addresses to the notebooks. Four properties are activated and set: `c.NotebookApp.notebook_dir`, `c.NotebookApp.ip`, `c.NotebookApp.open_browser`, and `c.NotebookApp.port`:
+The following step is to update the Jupyter Notebook configuration file, `~/.jupyter/jupyter_notebook_config.py`,to make it use the just created folder and to enable the access from external IP addresses to the notebooks. Four properties are activated and set: `c.NotebookApp.notebook_dir`, `c.NotebookApp.ip`, `c.NotebookApp.open_browser`, and `c.NotebookApp.port`:
 ```bash
 sed -i "s/#c.NotebookApp.notebook_dir = u''/c.NotebookApp.notebook_dir = u'\/home\/ubuntu\/notebooks'/" ~/.jupyter/jupyter_notebook_config.py
 sed -i "s/#c.NotebookApp.ip = 'localhost'/c.NotebookApp.ip = '*'/" ~/.jupyter/jupyter_notebook_config.py
 sed -i "s/#c.NotebookApp.open_browser = True/c.NotebookApp.open_browser = False/" ~/.jupyter/jupyter_notebook_config.py
 sed -i "s/#c.NotebookApp.port = 8888/c.NotebookApp.port = 9999/" ~/.jupyter/jupyter_notebook_config.py
-``````bash
-echo 'export PYSPARK_PYTHON=$ANACONDA_HOME/bin/python
-export PYSPARK_DRIVER_PYTHON=jupyter
-export PYSPARK_DRIVER_PYTHON_OPTS="notebook"
-' >> $SPARK_CONF_DIR/spark-env.sh
 ```
+
 The configuration above enables a public Notebook server. There is no built-in security and that is acceptable as a private Openstack cloud is being used. In open environments, the server must be secured with a password and TLS (see [Running a public Notebook server](http://jupyter-notebook.readthedocs.io/en/latest/public_server.html#running-a-public-notebook-server)).
 
 Finally, Spark must be configured to run a notebook when `pyspark` is invoked.
