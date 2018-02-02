@@ -1,17 +1,19 @@
 # Sparkling Water setup
 
-1. Java installation in all cluster instances.
-2. /etc/host upldate in all cluster instances.
-3. Password-less ssh configuration
-4. Spark installation in all cluster instances.
-5. Creation of slaves file in the master instance.
-6. Installation and configuration of Anaconda (Python 3.5)
-7. H2O Installation
-8. Sparkling Water Installation
+1. [Java installation in all cluster instances](#java-installation-in-all-instances).
+2. [/etc/host upldate in all cluster instances](#etchosts-update-in-all-instances).
+3. [Password-less ssh configuration](#password-less-ssh-configuration).
+4. [Spark installation on all instances](#spark-installation-on-all-instances).
+5. [Python Installation and Configuration](#python-installation-and-configuration).
+6. [Jupyter Notebook configuration](#jupyter-notebook-configuration).
+7. [Sparkling Water Installation](#sparkling-water-installation).
 
 --------
 
 Our environment is made of two instances, one master and one slave. Master is named `tb012`, with IP address 192.168.0.12. First slave is named `tb013`, with IP address 192.168.0.13.
+
+## Java installation in all cluster instances
+See [Java installation](./java-setup.md) 
 
 ## /etc/hosts update in all instances
 The instances must be able to connect to each other. Thus, we add the following lines to the `/etc/hosts` file in each instance:
@@ -22,6 +24,30 @@ echo "
 192.168.0.13	cluster-slave-1
 " | sudo tee --append /etc/hosts
 ```
+
+## Password-less ssh configuration
+Password-less ssh communication between the master and the slaves is required to set up the Spark cluster. It can be achieved by means of different approaches involving different degrees of security. Here we will describe a generic approach where a new ssh key pair is created and necessary components are distributed to the instances in the cluster.
+
+First, access the master node, create a new pair of keys, and the `authorized_keys` file:
+```bash
+ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+```
+As a result, there will be three files in the `~/.ssh/` folder: `id_rsa`, `id_rsa.pub` and `authorized_keys`. `id_rsa.pub` can be removed, as it is no longer necessary. Retrieve the two remaining files, upload them to the master instance and move them to the `~/.ssh/` folder. Set the proper permissions:
+```bash
+chmod 0600 ~/.ssh/id_rsa
+chmod 0600 ~/.ssh/authorized_keys
+```
+
+Upload `authorized_keys` to the slave instances and move it to the `~/.ssh/` folder. Set the proper permissions:
+```bash
+chmod 0600 ~/.ssh/authorized_keys
+```
+
+Verify that seamless ssh connection is enabled by running the following commands on the master instance:
+```bash
+ssh -o StrictHostKeyChecking=no cluster-slave-1
+``` 
 
 ## Spark installation on all instances
 A Spark release compatible with Hadoop 2.7.4 and Zeppelin 0.7.2, [Spark 2.0.2](https://spark.apache.org/releases/spark-release-2-0-2.html), is chosen. Use a symbolic link to easily upgrade or change versions if wished.
@@ -75,7 +101,7 @@ export SPARK_LOCAL_IP=192.168.0.13
 
 It is possible to determine whether the installation has been right by running the `spark-shell` command in any instance (`spark-shell` without arguments is equivalent to `spark-shell --master local[*]`). Besides some warnings, the output should be something like this (to exit the Spark shell, type CTRL-D) when run on the master instance:
 ```bash
-Spark context Web UI available at http://<master-ip-address>:4040
+Spark context Web UI available at http://192.168.0.12:4040
 Spark context available as 'sc' (master = local[*], app id = local-1503914008988).
 Spark session available as 'spark'.
 Welcome to
@@ -91,7 +117,7 @@ Type :help for more information.
 ```
 If you try to run `pyspark`, an error will be raised  (sort of "Python not found" error), as python has not been installed yet.
 
-Before leaving the shell, it is possible to verify the status of the Spark context created by running the shell in `http://<master-floating-ip-address>:4040/`:
+Before leaving the shell, it is possible to verify the status of the Spark context created by running the shell in `http://192.168.0.12:4040/`:
 
 ![Spark Context UI](./images/spark-context-shell-idle.PNG)
 
@@ -122,7 +148,7 @@ To validate the cluster has been successfully started, the JVM Process Status to
 
 And a `Worker` process in each slave instance.
 
-The status of the Spark cluster can be verified in `http://<master-floating-ip-address>:8080/`:
+The status of the Spark cluster can be verified in `http://192.168.0.12:8080/`:
 
 ![Spark Standalone Cluster UI](./images/spark-standalone-idle.PNG)
 
@@ -142,13 +168,13 @@ When the cluster is stopped, the Spark Cluster UI becomes unreachable.
 
 Next, it is possible to verify whether `spark-shell` run against the cluster. First, the cluster is started again (both master and slaves). Next, the `spark-shell` is run with the `master` argument set to the IP address of the Spark Standalone cluster:
 ```bash
-spark-shell --master spark://<master-ip-address>:7077
+spark-shell --master spark://192.168.0.12:7077
 ```
 Besides some warnings, the output should is something such as this:
 
 ```bash
-Spark context Web UI available at http://<master-ip-address>:4040
-Spark context available as 'sc' (master = spark://<master-ip-address>:7077, app id = app-20170828131641-0000).
+Spark context Web UI available at http://192.168.0.12:4040
+Spark context available as 'sc' (master = spark://192.168.0.12:7077, app id = app-20170828131641-0000).
 Spark session available as 'spark'.
 Welcome to
       ____              __
@@ -162,11 +188,11 @@ Type in expressions to have them evaluated.
 Type :help for more information.
 ```
 
-If we verify the status of the Spark cluster (in `http://<master-floating-ip-address>:8080/`):
+If we verify the status of the Spark cluster (in `http://192.168.0.12:8080/`):
 
 ![Spark Standalone Cluster UI](./images/spark-standalone-shell.PNG)
 
-We find the existing *Worker* listed in the previous screenshot **and** the Spark shell as a new *Running Application*. At the same time, the Spark context UI (`http://<master-floating-ip-address>:4040/`) is available as well.
+We find the existing *Worker* listed in the previous screenshot **and** the Spark shell as a new *Running Application*. At the same time, the Spark context UI (`http://192.168.0.12:4040/`) is available as well.
 
 ## Python Installation and Configuration
 Python is handled by means of an [Anaconda Distribution](https://www.anaconda.com/distribution/), which is installed on master and slave instances. The release is 4.2.0. It includes not only Python 3.5 but a number of valuable Python packages and Jupyter Notebook as well (a **note about versions**: From 4.4, the Anaconda Distribution is based on Python 3.6; however, Spark 2.0 does not support Python 3.6, so that an earlier version of the Anaconda Distribution is required):
@@ -224,7 +250,7 @@ For making the server accessible from any client, the following settings must be
 sed -i "s/#c.NotebookApp.ip = 'localhost'/c.NotebookApp.ip = '*'/" ~/.jupyter/jupyter_notebook_config.py
 sed -i "s/#c.NotebookApp.open_browser = True/c.NotebookApp.open_browser = False/" ~/.jupyter/jupyter_notebook_config.py
 ```
-The Jupyter Notebook server can be accessed in `http://<master-ip-address>:8888/`:
+The Jupyter Notebook server can be accessed in `http://192.168.0.12:8888/`:
 
 Finally, some considerantions about the security. The configuration above enables a public Notebook server. Security is enabled by requesting an authentication token, created when Jupyter is run from the command line. Two options are considered
 
@@ -268,7 +294,7 @@ source ~/.bashrc
 
 It is possible to verify the right installation of Sparkling Water by running the shell (`sparkling-shell` accepts the same arguments as the regular Spark shell):
 ```bash
-sparkling-shell --master spark://<master-ip-address>:7077 \
+sparkling-shell --master spark://192.168.0.12:7077 \
 --conf spark.executor.instances=2 \
 --conf spark.executor.memory=2g \
 --conf spark.driver.memory=2g \
@@ -282,7 +308,7 @@ The output should be something like this (to exit the  shell, type CTRL-D) when 
 ```bash
 
 -----
-  Spark master (MASTER)     : spark://<master-ip-address>:7077
+  Spark master (MASTER)     : spark://192.168.0.12:7077
   Spark home   (SPARK_HOME) : /usr/local/spark
   H2O build version         : 3.16.0.4 (wheeler)
   Spark build version       : 2.0.2
@@ -292,8 +318,8 @@ The output should be something like this (to exit the  shell, type CTRL-D) when 
 Java HotSpot(TM) 64-Bit Server VM warning: ignoring option MaxPermSize=384m; support was removed in 8.0
 Setting default log level to "WARN".
 To adjust logging level use sc.setLogLevel(newLevel).
-Spark context Web UI available at http://<master-ip-address>:4040
-Spark context available as 'sc' (master = spark://<master-ip-address>:7077, app id = app-20180202113529-0002).
+Spark context Web UI available at http://192.168.0.12:4040
+Spark context available as 'sc' (master = spark://192.168.0.12:7077, app id = app-20180202113529-0002).
 Spark session available as 'spark'.
 Welcome to
       ____              __
@@ -326,7 +352,7 @@ sudo pip install h2o_pysparkling_2.0
 
 It is possible to verify the right installation of pysparkling by running it (`sparkling-shell` accepts the same arguments as the regular Spark shell):
 ```bash
-pysparkling --master spark://<master-ip-address>:7077 \
+pysparkling --master spark://192.168.0.12:7077 \
 --conf spark.executor.instances=2 \
 --conf spark.executor.memory=2g \
 --conf spark.driver.memory=2g \
