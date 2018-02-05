@@ -49,10 +49,9 @@ readlink -f /usr/bin/java | sed "s:bin/java::"
 
 Next, the following environment variable must set in the `.bashrc` file under `/home/ubuntu` (on all the instances):
 ```bash
-echo '
+echo "
 # Set JAVA_HOME 
-export JAVA_HOME=/usr/lib/jvm/java-8-oracle/jre
-' >> ~/.bashrc
+export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")" >> ~/.bashrc
 ```
 
 Once updated, the `.bashrc` file must be reloaded:
