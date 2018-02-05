@@ -1,20 +1,25 @@
-# Sparkling Water setup
+# Sparkling Water setup in a Spark Standalone cluster
 
-1. [Java installation on all instances](#java-installation-on-cluster-instances).
-2. [/etc/host upldate on all instances](#etchosts-update-on-all-instances).
-3. [Password-less ssh configuration](#password-less-ssh-configuration).
-4. [Spark installation on all instances](#spark-installation-on-all-instances).
-5. [Python installation and configuration](#python-installation-and-configuration).
-6. [Jupyter Notebook configuration](#jupyter-notebook-configuration).
-7. [Sparkling Water installation](#sparkling-water-installation).
-8. [Pysparkling installation](#pysparkling-installation).
+1. [Java installation on all instances](#java-installation-on-cluster-instances)
+2. [/etc/host upldate on all instances](#etchosts-update-on-all-instances)
+3. [Password-less ssh configuration](#password-less-ssh-configuration)
+4. [Spark installation on all instances](#spark-installation-on-all-instances)
+5. [Python installation and configuration](#python-installation-and-configuration)
+6. [Sparkling Water installation](#sparkling-water-installation)
+7. [Pysparkling installation](#pysparkling-installation)
+8. [Jupyter Notebook configuration](#jupyter-notebook-configuration)
 
 --------
 
 Our environment is made of three instances, one master and two slaves:
- * master (`tb012`): 192.168.0.12
- * first slave (`tb013`): 192.168.0.13
- * second slave (`tb014`): 192.168.0.14
+* master (`tb012`): 192.168.0.12
+* first slave (`tb013`): 192.168.0.13
+* second slave (`tb014`): 192.168.0.14
+ 
+The instructions in this document will enable several scenarios:
+* Execution of H2O applications in the H2O Flow Server.
+* Execution of H2O applications as Jupyter notebooks.
+* Execution of H2O applications submitted to the Spark Standalone cluster
 
 ## Java installation on cluster instances
 See [Java installation](./java-setup.md) 
