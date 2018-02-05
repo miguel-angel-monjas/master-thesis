@@ -1,7 +1,7 @@
 # Sparkling Water setup
 
-1. [Java installation in all instances](#java-installation-in-all-instances).
-2. [/etc/host upldate in all instances](#etchosts-update-in-all-instances).
+1. [Java installation on all instances](#java-installation-on-cluster-instances).
+2. [/etc/host upldate on all instances](#etchosts-update-on-all-instances).
 3. [Password-less ssh configuration](#password-less-ssh-configuration).
 4. [Spark installation on all instances](#spark-installation-on-all-instances).
 5. [Python installation and configuration](#python-installation-and-configuration).
@@ -11,19 +11,22 @@
 
 --------
 
-Our environment is made of two instances, one master and one slave. Master is named `tb012`, with IP address 192.168.0.12. First slave is named `tb013`, with IP address 192.168.0.13.
+Our environment is made of three instances, one master and two slaves:
+ * master (`tb012`): 192.168.0.12
+ * first slave (`tb013`): 192.168.0.13
+ * second slave (`tb014`): 192.168.0.14
 
-## Java installation in all cluster instances
+## Java installation on cluster instances
 See [Java installation](./java-setup.md) 
 
-## /etc/hosts update in all instances
+## /etc/hosts update on all instances
 The instances must be able to connect to each other. Thus, we add the following lines to the `/etc/hosts` file in each instance:
 
 ```bash
 echo "
 192.168.0.12    cluster-master
 192.168.0.13    cluster-slave-1
-" | sudo tee --append /etc/hosts
+192.168.0.14    cluster-slave-2" | sudo tee --append /etc/hosts
 ```
 
 ## Password-less ssh configuration
@@ -48,6 +51,7 @@ chmod 0600 ~/.ssh/authorized_keys
 Verify that seamless ssh connection is enabled by running the following commands on the master instance:
 ```bash
 ssh -o StrictHostKeyChecking=no cluster-slave-1
+ssh -o StrictHostKeyChecking=no cluster-slave-2
 ``` 
 
 ## Spark installation on all instances
@@ -69,8 +73,7 @@ echo '
 # Set SPARK_HOME
 export SPARK_HOME=/usr/local/spark
 # Add Spark bin and sbin directories to PATH
-export PATH=$PATH:$SPARK_HOME/sbin:$SPARK_HOME/bin
-' >> ~/.bashrc
+export PATH=$PATH:$SPARK_HOME/sbin:$SPARK_HOME/bin' >> ~/.bashrc
 ```
 
 The `.bashrc` file is reloaded:
@@ -82,25 +85,23 @@ source ~/.bashrc
 Next, some additional variables in the `spark-env.sh` configuration file are activated and set on the master node:
 ```bash
 cp $SPARK_CONF_DIR/spark-env.sh.template $SPARK_CONF_DIR/spark-env.sh
-echo '
+echo "
 export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")
 export SPARK_MASTER_HOST=192.168.0.12
-export SPARK_LOCAL_IP=192.168.0.12
-' >> $SPARK_CONF_DIR/spark-env.sh
+export SPARK_LOCAL_IP=192.168.0.12" >> $SPARK_CONF_DIR/spark-env.sh
 ```
 
-A simila update is done in the slave nodes (see example for existing slave):
+A similar update is done on the slave nodes (see example for first slave):
 
 ```bash
 cp $SPARK_CONF_DIR/spark-env.sh.template $SPARK_CONF_DIR/spark-env.sh
-echo '
+echo "
 export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")
 export SPARK_MASTER_HOST=192.168.0.12
-export SPARK_LOCAL_IP=192.168.0.13
-' >> $SPARK_CONF_DIR/spark-env.sh
+export SPARK_LOCAL_IP=192.168.0.13" >> $SPARK_CONF_DIR/spark-env.sh
 ```
 
-It is possible to determine whether the installation has been right by running the `spark-shell` command in any instance (`spark-shell` without arguments is equivalent to `spark-shell --master local[*]`). Besides some warnings, the output should be something like this (to exit the Spark shell, type CTRL-D) when run on the master instance:
+It is possible to determine whether the installation has been right by running the `spark-shell` command in any instance (`spark-shell` without arguments is equivalent to `spark-shell --master local[*]`). Besides some warnings, the output should be something like this (to exit the Spark Shell, type CTRL-D) when run on the master instance:
 ```bash
 Spark context Web UI available at http://192.168.0.12:4040
 Spark context available as 'sc' (master = local[*], app id = local-1503914008988).
@@ -118,19 +119,20 @@ Type :help for more information.
 ```
 If you try to run `pyspark`, an error will be raised  (sort of "Python not found" error), as python has not been installed yet.
 
-Before leaving the shell, it is possible to verify the status of the Spark context created by running the shell in `http://cluster-master:4040/`:
+Before leaving the Spark Shell, it is possible to verify the status of the Spark context created when running the Spark Shell in `http://cluster-master:4040/`:
 
 ![Spark Context UI](./images/spark-context-shell-idle.PNG)
 
-### Spark cluster slaves configuration
+### Configuration of Spark cluster slaves
 The Spark `slaves` file must be created, only on the master node.
 ```bash
 echo "cluster-slave-1
+cluster-slave-2
 " > $SPARK_CONF_DIR/slaves
 ```
 
 ### Cluster start and stop
-In the master:
+On the master:
 ```bash
 $SPARK_HOME/sbin/start-master.sh
 $SPARK_HOME/sbin/start-slaves.sh 
@@ -201,7 +203,7 @@ If we verify the status of the Spark cluster (in `http://cluster-master:8080/`),
 
 ![Spark Standalone Cluster UI](./images/spark-standalone-shell.PNG)
 
-We find the existing *Worker* listed in the previous screenshot **and** the Spark shell as a new *Running Application*. At the same time, the Spark context UI (`http://cluster-manager:4040/`) is available as well.
+We find the existing *Worker* listed in the previous screenshot **and** the Spark Shell as a new *Running Application*. At the same time, the Spark context UI (`http://cluster-manager:4040/`) is available as well.
 
 ## Python Installation and Configuration
 Python is handled by means of an [Anaconda Distribution](https://www.anaconda.com/distribution/), which is installed on master and slave instances. The release is 4.2.0. It includes not only Python 3.5 but a number of valuable Python packages and Jupyter Notebook as well (a **note about versions**: From 4.4, the Anaconda Distribution is based on Python 3.6; however, Spark 2.0 does not support Python 3.6, so that an earlier version of the Anaconda Distribution is required):
@@ -223,55 +225,16 @@ export ANACONDA_HOME=/usr/local/anaconda
 export PATH=$ANACONDA_HOME/bin:$PATH' >> ~/.bashrc
 ```
 
-Finally, the `.bashrc` file is reloaded:
+The `.bashrc` file must reloaded:
 ```bash
 source ~/.bashrc
 ```
-## Jupyter Notebook configuration
-Jupyter can be used to run Pyspark applications as notebooks. However, for the Notebook server to be accessible from sites other than the localhost, some configuration is needed. First, a configuration file for Jupyter Notebook must be created on the master instance (the file is needed for enabling access to the Notebook server):
+
+Finally, the right Python version must be configured in the `spark-env.sh` configuration file on all instances in the cluster:
 
 ```bash
-/usr/local/anaconda/bin/jupyter notebook --generate-config -y
-```
-
-As a result, `~/.jupyter/jupyter_notebook_config.py` is created. Some setting in the configuration file must be updated as well in order to:
-* Know which folder for notebooks and kernels must use.
-* Enable access to the Notebook server from clients other than `localhost`. By default the Notebook server only listens on the `localhost` network interface. To enable connection from any client, the Notebook server must listen on all network interfaces and not open the browser.
-* Tune the security settings. Security in the Jupyter Notebook server is enabled by requesting an authentication token, created when Jupyter is run from the command line. As access to the command line is not always possible, two different options can be taken:
-  1. Enabling a password. This is the preferred option.
-  2. Disabling the authentication. This option is discouraged.
-
-### Notebooks folder
-The folder that hosts notebooks and kernels is created and proper permissions assigned:
-```bash
-sudo mkdir /srv/notebooks
-sudo chown ecemaml:ecemaml ./notebooks/
-```
-
-Next, the Jupyter Notebook configuration file, `~/.jupyter/jupyter_notebook_config.py`, is updated to use the just created folder, by activating the `c.NotebookApp.notebook_dir` setting:
-```bash
-sed -i "s/#c.NotebookApp.notebook_dir = ''/c.NotebookApp.notebook_dir = '\/srv\/notebooks'/" ~/.jupyter/jupyter_notebook_config.py
-```
-
-### Noteboook Server access
-For making the server accessible from any client, the following settings must be activated and/or modified: `c.NotebookApp.ip`, and `c.NotebookApp.open_browser` (see [Running a public Notebook server](http://jupyter-notebook.readthedocs.io/en/latest/public_server.html#running-a-public-notebook-server)). It allows to access the server from clients other than the `localhost` and not to start the browser when `jupyter notebook` is run:
-```bash
-sed -i "s/#c.NotebookApp.ip = 'localhost'/c.NotebookApp.ip = '*'/" ~/.jupyter/jupyter_notebook_config.py
-sed -i "s/#c.NotebookApp.open_browser = True/c.NotebookApp.open_browser = False/" ~/.jupyter/jupyter_notebook_config.py
-```
-The Jupyter Notebook server can be accessed in `http://cluster-manager:8888/`:
-
-Finally, some considerantions about the security. The configuration above enables a public Notebook server. Security is enabled by requesting an authentication token, created when Jupyter is run from the command line. Two options are considered
-
-#### Disabling token authentication (discouraged)
-```bash
-sed -i "s/#c.NotebookApp.token = '<generated>'/c.NotebookApp.token = ''/" ~/.jupyter/jupyter_notebook_config.py
-```
-
-#### Enabling password authentication
-If using `my_password` as password:
-```bash
-sed -i "s/#c.NotebookApp.password = ''/c.NotebookApp.password = 'my_password'/" ~/.jupyter/jupyter_notebook_config.py
+echo "
+export PYSPARK_PYTHON=$ANACONDA_HOME/bin/python" >> $SPARK_CONF_DIR/spark-env.sh
 ```
 
 ## Sparkling Water Installation
@@ -301,7 +264,7 @@ Finally, the `.bashrc` file is reloaded:
 source ~/.bashrc
 ```
 
-It is possible to verify the right installation of Sparkling Water by running the shell (`sparkling-shell` accepts the same arguments as the regular Spark shell):
+It is possible to verify the right installation of Sparkling Water by running the Sparkling Shell (`sparkling-shell` accepts the same arguments as the regular Spark shell):
 ```bash
 sparkling-shell --master spark://cluster-master:7077 \
 --conf spark.executor.instances=2 \
@@ -312,7 +275,7 @@ sparkling-shell --master spark://cluster-master:7077 \
 --conf spark.scheduler.minRegisteredResourcesRatio=1
 ```
 
-The output should be something like this (to exit the  shell, type CTRL-D) when run on the master instance:
+The output should be something like this (to exit the Sparkling Shell, type CTRL-D) when run on the master instance:
 
 ```bash
 
@@ -342,7 +305,7 @@ Type in expressions to have them evaluated.
 Type :help for more information.
 ```
 
-Next, let's create an H2O cluster inside the Spark cluster, by running the following code in the sparkling shell:
+Next, let's create an H2O cluster inside the Spark cluster, by running the following code in the Sparkling Shell:
 ```java
 import org.apache.spark.h2o._
 val h2oContext = H2OContext.getOrCreate(spark) 
@@ -365,18 +328,18 @@ Sparkling Water Context:
   Open H2O Flow in browser: http://192.168.0.12:54321 (CMD + click in Mac OSX)
 ```
 
-It is possible to inspect the Spark cluster status by accessing the cluster UI (in `http://cluster-master:8080/`):
+It is also possible to inspect the Spark cluster status by accessing the cluster UI (in `http://cluster-master:8080/`):
 
 ![Spark Standalone Cluster UI with H2O](./images/spark-standalone-sparkling-shell.PNG)
 
-Notice, under the **Running Applications** section, a Spark Shell application (in the figure, the completed application comes from an earlier execution). As far as Spark is concerned, `sparkling-shell` is simply a Spark shell. You can access the H2O Flow Server (in `http://cluster-master:54321/`) as well:
+Notice, under the **Running Applications** section, a Spark Shell application. As far as Spark is concerned (the application within the Completed Applications section comes from a previous execution), `sparkling-shell` is simply another Spark Shell. You can access the H2O Flow Server (in `http://cluster-master:54321/`) as well:
 
 ![H2O Flow](./images/h2o-flow.PNG)
 
 ## Pysparkling installation
 The description is based on [official documentation](https://github.com/h2oai/sparkling-water/blob/rel-2.0/py/README.rst) and on a [My Big Data World blog post](https://weidongzhou.wordpress.com/2017/11/06/h2o-vs-sparkling-water/). 
 
-In order to use the `pysparkling`, you must install the H2O dependencies: 
+In order to use Pysparkling, you must install the H2O dependencies: 
 
 ```bash
 sudo /usr/local/anaconda/bin/conda install -y -c anaconda requests 
@@ -385,12 +348,12 @@ sudo /usr/local/anaconda/bin/conda install -y -c conda-forge colorama
 sudo /usr/local/anaconda/bin/conda install -y -c conda-forge future
 ```
 
-Finally, install `pysparkling` in the master instance in the cluster:
+Finally, install `pysparkling` on the master instance in the cluster (use `pip`, as `pysparkling` is not in the Anaconda channels):
 ```bash
 sudo pip install h2o_pysparkling_2.0
 ```
 
-It is possible to verify the right installation of pysparkling by running it (`sparkling-shell` accepts the same arguments as the regular Spark shell):
+It is possible to verify the right installation of Pysparkling by running it (`pysparkling` accepts the same arguments as the regular Spark `pyspark`):
 ```bash
 pysparkling --master spark://cluster-master:7077 \
 --conf spark.executor.instances=2 \
@@ -401,5 +364,107 @@ pysparkling --master spark://cluster-master:7077 \
 --conf spark.scheduler.minRegisteredResourcesRatio=1
 ```
 
-Next, you 
+Next, we are creating an H2O cluster inside the Spark cluster in order to verify the Pysparkling installation. Once the Pysparkling Shell is opened, we can run the following code:
 
+```python
+from pysparkling import *
+import h2o
+
+hc = H2OContext.getOrCreate(spark)
+```
+
+The output, once the H2O context is created shouls be similar to this:
+```python
+Connecting to H2O server at http://192.168.0.12:54321... successful.
+--------------------------  -----------------------------------------------
+H2O cluster uptime:         19 secs
+H2O cluster version:        3.16.0.4
+H2O cluster version age:    20 days
+H2O cluster name:           sparkling-water-ecemaml_app-20180205155459-0000
+H2O cluster total nodes:    1
+H2O cluster free memory:    1.823 Gb
+H2O cluster total cores:    1
+H2O cluster allowed cores:  1
+H2O cluster status:         accepting new members, healthy
+H2O connection url:         http://192.168.0.12:54321
+H2O connection proxy:
+H2O internal security:      False
+H2O API Extensions:         XGBoost, Algos, AutoML, Core V3, Core V4
+Python version:             3.5.2 final
+--------------------------  -----------------------------------------------
+
+Sparkling Water Context:
+ * H2O name: sparkling-water-ecemaml_app-20180205155459-0000
+ * cluster size: 1
+ * list of used nodes:
+  (executorId, host, port)
+  ------------------------
+  (0,192.168.0.14,54321)
+  ------------------------
+
+  Open H2O Flow in browser: http://192.168.0.12:54321 (CMD + click in Mac OSX)
+```
+
+As with the Sparkling Shell, it is possible to inspect the Spark cluster status by accessing the cluster UI (in `http://cluster-master:8080/`):
+
+![Spark Standalone Cluster UI with H2O and Pysparkling](./images/spark-standalone-pysparkling.PNG)
+
+
+## H2O applications run as Jupyter notebooks
+Jupyter can be used to run Pyspark applications as notebooks. It is possible to use it to run Pysparkling applications as well.
+ 
+### Jupyter Notebook configuration
+ First, some configuration for making the Notebook server be accessible from sites other than the localhost is needed. A configuration file for Jupyter Notebook must be created on the master instance (the file is needed for enabling access to the Notebook server):
+
+```bash
+/usr/local/anaconda/bin/jupyter notebook --generate-config -y
+```
+
+As a result, `~/.jupyter/jupyter_notebook_config.py` is created. Some settings in the configuration file must be updated as well in order to:
+* Know which folder for notebooks and kernels must use.
+* Enable access to the Notebook server from clients other than `localhost`. By default the Notebook server only listens on the `localhost` network interface. To enable connection from any client, the Notebook server must listen on all network interfaces and not open the browser.
+* Tune the security settings. Security in the Jupyter Notebook server is enabled by requesting an authentication token, created when Jupyter is run from the command line. As access to the command line is not always possible, two different options can be taken:
+  1. Enabling a password. This is the preferred option.
+  2. Disabling the authentication. This option is discouraged.
+
+#### Notebooks folder
+The folder that hosts notebooks and kernels is created and proper permissions assigned:
+```bash
+sudo mkdir /srv/notebooks
+sudo chown ecemaml:ecemaml ./notebooks/
+```
+
+Next, the Jupyter Notebook configuration file, `~/.jupyter/jupyter_notebook_config.py`, is updated to use the just created folder, by activating the `c.NotebookApp.notebook_dir` setting:
+```bash
+sed -i "s/#c.NotebookApp.notebook_dir = ''/c.NotebookApp.notebook_dir = '\/srv\/notebooks'/" ~/.jupyter/jupyter_notebook_config.py
+```
+
+#### Noteboook Server access
+For making the server accessible from any client, the following settings must be activated and/or modified: `c.NotebookApp.ip`, and `c.NotebookApp.open_browser` (see [Running a public Notebook server](http://jupyter-notebook.readthedocs.io/en/latest/public_server.html#running-a-public-notebook-server)). It allows to access the server from clients other than the `localhost` and not to start the browser when `jupyter notebook` is run:
+```bash
+sed -i "s/#c.NotebookApp.ip = 'localhost'/c.NotebookApp.ip = '*'/" ~/.jupyter/jupyter_notebook_config.py
+sed -i "s/#c.NotebookApp.open_browser = True/c.NotebookApp.open_browser = False/" ~/.jupyter/jupyter_notebook_config.py
+```
+The Jupyter Notebook server can be accessed in `http://cluster-manager:8888/`:
+
+Finally, some considerations about the security. The configuration above sets up a public Notebook server. Security is enabled by requesting an authentication token to access the server (the token is created when Jupyter is run from the command line). Two options are considered
+
+##### Disabling token authentication (discouraged)
+```bash
+sed -i "s/#c.NotebookApp.token = '<generated>'/c.NotebookApp.token = ''/" ~/.jupyter/jupyter_notebook_config.py
+```
+
+##### Enabling password authentication
+If using `my_password` as password:
+```bash
+sed -i "s/#c.NotebookApp.password = ''/c.NotebookApp.password = 'my_password'/" ~/.jupyter/jupyter_notebook_config.py
+```
+
+### Configuration for running Pysparkling notebooks
+The configuration described in the section above just enables an open access to the server. However, it is necessary to trigger the access to the Notebook server when Pysparkling is run. It is done by updating the `spark-env.sh` configuration file on the master instance:
+
+```bash
+echo '
+export PYSPARK_DRIVER_PYTHON=jupyter
+export PYSPARK_DRIVER_PYTHON_OPTS="notebook"' >> $SPARK_CONF_DIR/spark-env.sh
+```
