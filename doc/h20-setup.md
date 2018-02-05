@@ -22,7 +22,43 @@ The instructions in this document will enable several scenarios:
 * Execution of H2O applications submitted to the Spark Standalone cluster
 
 ## Java installation on cluster instances
-See [Java installation](./java-setup.md) 
+Java must be installed in all the cluster instances: ***Oracle Java 8*** has been chosen (some tutorials found on the Internet, such as [this](http://tecadmin.net/install-oracle-java-8-jdk-8-ubuntu-via-ppa/) and [this](http://stackoverflow.com/questions/19275856/auto-yes-to-the-license-agreement-on-sudo-apt-get-y-install-oracle-java7-instal)) are used):
+
+```bash
+sudo apt-get update
+echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
+echo oracle-java8-installer shared/accepted-oracle-license-v1-1 seen true | sudo debconf-set-selections
+sudo add-apt-repository -y ppa:webupd8team/java
+sudo apt-get update
+sudo apt-get install -y oracle-java8-installer
+sudo apt-get install -y oracle-java8-set-default
+```
+
+Verification of a successful Java installacion can be done by typing `java -version` in the console. The output must be similar to this:
+```bash
+java version "1.8.0_161"
+Java(TM) SE Runtime Environment (build 1.8.0_161-b12)
+Java HotSpot(TM) 64-Bit Server VM (build 25.161-b12, mixed mode)
+```
+
+## Environment variables setup on all instances
+In order to determine the actual Java home, the following command can be used:
+```bash
+readlink -f /usr/bin/java | sed "s:bin/java::"
+```
+
+Next, the following environment variable must set in the `.bashrc` file under `/home/ubuntu` (on all the instances):
+```bash
+echo '
+# Set JAVA_HOME 
+export JAVA_HOME=/usr/lib/jvm/java-8-oracle/jre
+' >> ~/.bashrc
+```
+
+Once updated, the `.bashrc` file must be reloaded:
+```bash
+source ~/.bashrc
+```
 
 ## /etc/hosts update on all instances
 The instances must be able to connect to each other. Thus, we add the following lines to the `/etc/hosts` file in each instance:
@@ -473,3 +509,25 @@ echo '
 export PYSPARK_DRIVER_PYTHON=jupyter
 export PYSPARK_DRIVER_PYTHON_OPTS="notebook"' >> $SPARK_CONF_DIR/spark-env.sh
 ```
+
+The execution of Jupyter Notebook is triggered when `pysparkling`, with proper options, is run. An output similar to this is printed in the console:
+
+```bash
+[I 18:03:58.858 NotebookApp] [nb_conda_kernels] enabled, 3 kernels found
+[W 18:03:58.890 NotebookApp] WARNING: The notebook server is listening on all IP addresses and not using encryption. This is not recommended.
+[W 18:03:58.891 NotebookApp] WARNING: The notebook server is listening on all IP addresses and not using authentication. This is highly insecure and not recommended.
+[I 18:03:58.985 NotebookApp] ✓ nbpresent HTML export ENABLED
+[W 18:03:58.985 NotebookApp] ✗ nbpresent PDF export DISABLED: No module named 'nbbrowserpdf'
+[I 18:03:59.062 NotebookApp] [nb_anacondacloud] enabled
+[I 18:03:59.066 NotebookApp] [nb_conda] enabled
+[I 18:03:59.070 NotebookApp] Serving notebooks from local directory: /srv/notebooks
+[I 18:03:59.070 NotebookApp] 0 active kernels
+[I 18:03:59.071 NotebookApp] The Jupyter Notebook is running at: http://[all ip addresses on your system]:8888/
+[I 18:03:59.071 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+```
+
+At the same time, the Jupyter Notebook server is accessible in `http://cluster-master:8888/`:
+
+![Spark Notebook](./images/spark-notebook-empty.PNG)
+
+Once the *kernel* is loaded, it is possible to start to create and execute H2O applications as Jupyter notebooks. The Jupyter Notebook server can be terminated by typing CTRL-C.
