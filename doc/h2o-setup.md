@@ -12,14 +12,14 @@
 --------
 
 Our environment is made of three instances, one master and two slaves:
-* master (`tb012`): 192.168.0.12
-* first slave (`tb013`): 192.168.0.13
-* second slave (`tb014`): 192.168.0.14
+ * master (`tb012`), with IP address `192.168.0.12`
+ * first slave (`tb013`): with IP address `192.168.0.13`
+ * second slave (`tb014`): with IP address `192.168.0.14`
  
 The instructions in this document will enable several scenarios:
-* Execution of H2O applications in the H2O Flow Server.
-* Execution of H2O applications as Jupyter notebooks.
-* Execution of H2O applications submitted to the Spark Standalone cluster
+ * Execution of H2O applications in the H2O Flow Server.
+ * Execution of H2O applications as Jupyter notebooks.
+ * Execution of H2O applications submitted to the Spark Standalone cluster
 
 ## Java installation on cluster instances
 Java must be installed in all the cluster instances: ***Oracle Java 8*** has been chosen (some tutorials found on the Internet, such as [this](http://tecadmin.net/install-oracle-java-8-jdk-8-ubuntu-via-ppa/) and [this](http://stackoverflow.com/questions/19275856/auto-yes-to-the-license-agreement-on-sudo-apt-get-y-install-oracle-java7-instal)) are used):
@@ -64,9 +64,9 @@ The instances must be able to connect to each other. Thus, we add the following 
 
 ```bash
 echo "
-192.168.0.12    cluster-master
-192.168.0.13    cluster-slave-1
-192.168.0.14    cluster-slave-2" | sudo tee --append /etc/hosts
+192.168.0.12  cluster-master
+192.168.0.13  cluster-slave-1
+192.168.0.14  cluster-slave-2" | sudo tee --append /etc/hosts
 ```
 
 ## Password-less ssh configuration
@@ -107,7 +107,7 @@ rm spark-2.0.2-bin-hadoop2.7.tgz
 ```
 
 ### Spark environment variables setup on master and slave nodes
-The following environment variables are set in the `.bashrc` file under `/home/ecemaml` (both on master and slave nodes):
+The following environment variables are set in the `.bashrc` file under `/home/<working user id>` (both on master and slave nodes):
 ```bash
 echo '
 # Set SPARK_HOME
@@ -141,30 +141,32 @@ export SPARK_MASTER_HOST=192.168.0.12
 export SPARK_LOCAL_IP=192.168.0.13" >> $SPARK_CONF_DIR/spark-env.sh
 ```
 
-It is possible to determine whether the installation has been right by running the `spark-shell` command in any instance (`spark-shell` without arguments is equivalent to `spark-shell --master local[*]`). Besides some warnings, the output should be something like this (to exit the Spark Shell, type CTRL-D) when run on the master instance:
+It is possible to determine whether the installation has been successful by running the `spark-shell` command in any instance (running `spark-shell` without arguments is equivalent to doing it with `spark-shell --master local[*]`). If we do it on the master instance, the output should be similar to this (to exit the Spark Shell, type CTRL-D):
 ```bash
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel).
 Spark context Web UI available at http://192.168.0.12:4040
-Spark context available as 'sc' (master = local[*], app id = local-1503914008988).
+Spark context available as 'sc' (master = local[*], app id = local-1517909559935).
 Spark session available as 'spark'.
 Welcome to
       ____              __
      / __/__  ___ _____/ /__
-    _\ \/ _ \/ _ \`/ __/  '_/
+    _\ \/ _ \/ _ `/ __/  '_/
    /___/ .__/\_,_/_/ /_/\_\   version 2.0.2
       /_/
 
-Using Scala version 2.11.8 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_144)
+Using Scala version 2.11.8 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_161)
 Type in expressions to have them evaluated.
 Type :help for more information.
 ```
 If you try to run `pyspark`, an error will be raised  (sort of "Python not found" error), as python has not been installed yet.
 
-Before leaving the Spark Shell, it is possible to verify the status of the Spark context created when running the Spark Shell in `http://cluster-master:4040/`:
+Before leaving the Spark Shell, it is possible to verify the status of the Spark context created upon the execution of the Spark Shell by accessing `http://cluster-master:4040/`:
 
 ![Spark Context UI](./images/spark-context-shell-idle.PNG)
 
 ### Configuration of Spark cluster slaves
-The Spark `slaves` file must be created, only on the master node.
+In order to let the master know which instances will play the role of slaves, the Spark `slaves` file must be created on the master node. In our scenario, with two slaves:
 ```bash
 echo "cluster-slave-1
 cluster-slave-2
@@ -172,7 +174,7 @@ cluster-slave-2
 ```
 
 ### Cluster start and stop
-On the master:
+Connect to the master instance (`<working user id>`:`<working user password>`) and execute the following commands:
 ```bash
 $SPARK_HOME/sbin/start-master.sh
 $SPARK_HOME/sbin/start-slaves.sh 
@@ -182,20 +184,23 @@ Instead, it is possible start *Master* and *Workers* at the same time:
 $SPARK_HOME/sbin/start-all.sh 
 ``` 
 
-To validate the cluster has been successfully started, the JVM Process Status tool can be run on the master and slave instances. The output should list `Worker` and `Master` on the master node:
+To validate the cluster has been successfully started, the JVM Process Status tool can be run on the master and slave instances. The output should list a `Master` on the master node:
 ```bash
-11512 Worker
-10920 Master
-11677 Jps
+9587 Master
+9651 Jps
 ```
 
-And a `Worker` process in each slave instance.
+And a `Worker` process in each slave instance:
+```bash
+13175 Jps
+13150 Worker
+```
 
 The status of the Spark cluster can be verified in `http://cluster-master:8080/`:
 
-![Spark Standalone Cluster UI](./images/spark-standalone-idle.PNG)
+![Spark Standalone Cluster UI](./images/spark-standalone-idle-192.PNG)
 
-Only one worker must appear. No applications (running or completed) are listed and no Spark context UI is available.
+Two workers must appear. No applications (running or completed) are listed and no Spark context UI (`http://cluster-master:8080/`) is available.
 
 To terminate the cluster, you can stop *Master* and *Workers* separately or just with a single command:
 ```bash
@@ -207,7 +212,7 @@ Or:
 $SPARK_HOME/sbin/stop-all.sh 
 ``` 
 
-For your convenience, you can create a script (`restart_all.sh` for instance) to restart the cluster:
+For the operation convenience, a script (`restart_all.sh`) is available at `/home/<working user id>` to restart the cluster. Its content can be seen below:
 ```bash
 #!/bin/sh
 
@@ -217,33 +222,35 @@ $SPARK_HOME/sbin/start-all.sh
 
 When the cluster is stopped, the Spark Cluster UI becomes unreachable.
 
-Next, it is possible to verify whether `spark-shell` run against the cluster. First, the cluster is started again (both master and slaves). Next, the `spark-shell` is run with the `master` argument set to the IP address of the Spark Standalone cluster:
+Next, it is possible to verify whether `spark-shell` run against the cluster. First, the cluster is started again (both master and slaves). Next, the `spark-shell` is run with the `master` argument set to the IP address of the Spark Standalone cluster. You can do it from any instance of the cluster or from any other instance in the cloud with the same Spark version:
 ```bash
 spark-shell --master spark://cluster-master:7077
 ```
 Besides some warnings, the output should is something such as this:
 
 ```bash
-Spark context Web UI available at http://192.168.0.12:4040
-Spark context available as 'sc' (master = spark://192.168.0.12:7077, app id = app-20170828131641-0000).
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel).
+Spark context Web UI available at http://192.168.0.13:4040
+Spark context available as 'sc' (master = spark://cluster-master:7077, app id = app-20180206104842-0000).
 Spark session available as 'spark'.
 Welcome to
       ____              __
      / __/__  ___ _____/ /__
-    _\ \/ _ \/ _ \`/ __/  '_/
+    _\ \/ _ \/ _ `/ __/  '_/
    /___/ .__/\_,_/_/ /_/\_\   version 2.0.2
       /_/
 
-Using Scala version 2.11.8 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_144)
+Using Scala version 2.11.8 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_161)
 Type in expressions to have them evaluated.
 Type :help for more information.
 ```
 
 If we verify the status of the Spark cluster (in `http://cluster-master:8080/`), we obtain the following UI:
 
-![Spark Standalone Cluster UI](./images/spark-standalone-shell.PNG)
+![Spark Standalone Cluster UI](./images/spark-standalone-shell-192.PNG)
 
-We find the existing *Worker* listed in the previous screenshot **and** the Spark Shell as a new *Running Application*. At the same time, the Spark context UI (`http://cluster-manager:4040/`) is available as well.
+We find the two existing *Workers* listed in the previous screenshot **and** the Spark Shell as a new *Running Application*. At the same time, the Spark context UI (`http://cluster-manager:4040/`) is available (you can access it by clicking on *Spark shell* uner the *Name* column in the *Running Applications* section).
 
 ## Python Installation and Configuration
 Python is handled by means of an [Anaconda Distribution](https://www.anaconda.com/distribution/), which is installed on master and slave instances. The release is 4.2.0. It includes not only Python 3.5 but a number of valuable Python packages and Jupyter Notebook as well (a **note about versions**: From 4.4, the Anaconda Distribution is based on Python 3.6; however, Spark 2.0 does not support Python 3.6, so that an earlier version of the Anaconda Distribution is required):
@@ -251,12 +258,12 @@ Python is handled by means of an [Anaconda Distribution](https://www.anaconda.co
 ```bash
 wget https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh
 sudo /bin/bash Anaconda3-4.2.0-Linux-x86_64.sh -b -p /usr/local/anaconda
-sudo chown -R ecemaml:ecemaml /usr/local/anaconda/
+sudo chown -R <working user id>:<working user id> /usr/local/anaconda/
 rm Anaconda3-4.2.0-Linux-x86_64.sh
 sudo /usr/local/anaconda/bin/conda update -y conda
 ```
 
-Next, the following environment variables must are set in the `.bashrc` file under `/home/ecemaml` (both on master and slave nodes):
+Next, the following environment variables must are set in the `.bashrc` file under `/home/<working user id>` (both on master and slave nodes):
 ```bash
 echo '
 # Set ANACONDA_HOME
@@ -277,10 +284,12 @@ echo "
 export PYSPARK_PYTHON=$ANACONDA_HOME/bin/python" >> $SPARK_CONF_DIR/spark-env.sh
 ```
 
-## Sparkling Water Installation
-The description below is based on [official documentation](http://h2o-release.s3.amazonaws.com/sparkling-water/rel-2.0/2/index.html) and on a [My Big Data World blog post](https://weidongzhou.wordpress.com/2017/11/06/h2o-vs-sparkling-water/). 
+If you run `pyspark` (with the same options as with the Spark Shell) a similar result will be obtained (*PySparkShell* as running application instead of *Spark shell*).
 
-As the Sparkling Water release is aligned with the Spark release, use Sparkling Water 2.0. Download the package and install it in the cluster manager (we're using a symbolic link to enable version upgrade):
+## Sparkling Water Installation
+(*The description in this section is based on [official documentation](http://h2o-release.s3.amazonaws.com/sparkling-water/rel-2.0/2/index.html) and on a [My Big Data World blog post](https://weidongzhou.wordpress.com/2017/11/06/h2o-vs-sparkling-water/)*) 
+
+As the Sparkling Water release is aligned with the Spark release, we use Sparkling Water 2.0. Download the package and install it in the cluster manager (we're using a symbolic link to enable version upgrade):
  
 ```bash
 wget http://h2o-release.s3.amazonaws.com/sparkling-water/rel-2.0/22/sparkling-water-2.0.22.zip
@@ -290,7 +299,7 @@ sudo ln -s /opt/sparkling-waters/sparkling-water-2.0.22 /usr/local/sparkling-wat
 rm sparkling-water-2.0.22.zip
 ```
 
-The following environment variables are set in the `.bashrc` file under `/home/ecemaml`:
+The following environment variables must be set in the `.bashrc` file under `/home/<working user id>`:
 ```bash
 echo '
 # Set SPARKLING_HOME
@@ -345,6 +354,8 @@ Type in expressions to have them evaluated.
 Type :help for more information.
 ```
 
+If you go to the Spark cluster UI, you'll notice, under the **Running Applications** section, a Spark Shell application. As far as Spark is concerned, `sparkling-shell` is simply another Spark Shell. 
+
 Next, let's create an H2O cluster inside the Spark cluster, by running the following code in the Sparkling Shell:
 ```java
 import org.apache.spark.h2o._
@@ -352,34 +363,35 @@ val h2oContext = H2OContext.getOrCreate(spark)
 import h2oContext._ 
 ```
 
-The output when creating the H2O context must be similar to this:
+The output when creating the H2O context must be similar to this (notice the two workers):
 ```bash
 h2oContext: org.apache.spark.h2o.H2OContext =
 
 Sparkling Water Context:
- * H2O name: sparkling-water-ecemaml_app-20180202151814-0001
- * cluster size: 1
+ * H2O name: sparkling-water-ecemaml_app-20180206105948-0000
+ * cluster size: 2
  * list of used nodes:
   (executorId, host, port)
   ------------------------
+  (1,192.168.0.14,54321)
   (0,192.168.0.13,54321)
   ------------------------
 
   Open H2O Flow in browser: http://192.168.0.12:54321 (CMD + click in Mac OSX)
 ```
 
-It is also possible to inspect the Spark cluster status by accessing the cluster UI (in `http://cluster-master:8080/`):
+The Spark Context UI (in `http://cluster-master:4040/`) shows the jobs required to create the H2O cluster:
 
-![Spark Standalone Cluster UI with H2O](./images/spark-standalone-sparkling-shell.PNG)
+![Spark Context with H2O](./images/spark-context-sparkling-shell-working-192.PNG)
 
-Notice, under the **Running Applications** section, a Spark Shell application. As far as Spark is concerned (the application within the Completed Applications section comes from a previous execution), `sparkling-shell` is simply another Spark Shell. You can access the H2O Flow Server (in `http://cluster-master:54321/`) as well:
+You can access the H2O Flow Server (in `http://cluster-master:54321/`) as well:
 
 ![H2O Flow](./images/h2o-flow.PNG)
 
 ## Pysparkling installation
-The description is based on [official documentation](https://github.com/h2oai/sparkling-water/blob/rel-2.0/py/README.rst) and on a [My Big Data World blog post](https://weidongzhou.wordpress.com/2017/11/06/h2o-vs-sparkling-water/). 
+(*The description in this section is based on [official documentation](https://github.com/h2oai/sparkling-water/blob/rel-2.0/py/README.rst) and on a [My Big Data World blog post](https://weidongzhou.wordpress.com/2017/11/06/h2o-vs-sparkling-water/)*) 
 
-In order to use Pysparkling, you must install the H2O dependencies: 
+In order to use Pysparkling, the H2O dependencies must be installed on all the cluster instances: 
 
 ```bash
 sudo /usr/local/anaconda/bin/conda install -y -c anaconda requests 
@@ -388,9 +400,9 @@ sudo /usr/local/anaconda/bin/conda install -y -c conda-forge colorama
 sudo /usr/local/anaconda/bin/conda install -y -c conda-forge future
 ```
 
-Finally, install `pysparkling` on the master instance in the cluster (use `pip`, as `pysparkling` is not in the Anaconda channels):
+Finally, install `pysparkling` on all the cluster instances (use `pip`, as `pysparkling` is not in the Anaconda channels):
 ```bash
-sudo pip install h2o_pysparkling_2.0
+sudo /usr/local/anaconda/bin/pip install h2o_pysparkling_2.0
 ```
 
 It is possible to verify the right installation of Pysparkling by running it (`pysparkling` accepts the same arguments as the regular Spark `pyspark`):
@@ -409,7 +421,6 @@ Next, we are creating an H2O cluster inside the Spark cluster in order to verify
 ```python
 from pysparkling import *
 import h2o
-
 hc = H2OContext.getOrCreate(spark)
 ```
 
@@ -417,14 +428,14 @@ The output, once the H2O context is created shouls be similar to this:
 ```python
 Connecting to H2O server at http://192.168.0.12:54321... successful.
 --------------------------  -----------------------------------------------
-H2O cluster uptime:         19 secs
+H2O cluster uptime:         20 secs
 H2O cluster version:        3.16.0.4
-H2O cluster version age:    20 days
-H2O cluster name:           sparkling-water-ecemaml_app-20180205155459-0000
-H2O cluster total nodes:    1
-H2O cluster free memory:    1.823 Gb
-H2O cluster total cores:    1
-H2O cluster allowed cores:  1
+H2O cluster version age:    21 days, 13 hours and 50 minutes
+H2O cluster name:           sparkling-water-ecemaml_app-20180206113441-0003
+H2O cluster total nodes:    2
+H2O cluster free memory:    3.644 Gb
+H2O cluster total cores:    2
+H2O cluster allowed cores:  2
 H2O cluster status:         accepting new members, healthy
 H2O connection url:         http://192.168.0.12:54321
 H2O connection proxy:
@@ -434,12 +445,13 @@ Python version:             3.5.2 final
 --------------------------  -----------------------------------------------
 
 Sparkling Water Context:
- * H2O name: sparkling-water-ecemaml_app-20180205155459-0000
- * cluster size: 1
+ * H2O name: sparkling-water-ecemaml_app-20180206113441-0003
+ * cluster size: 2
  * list of used nodes:
   (executorId, host, port)
   ------------------------
   (0,192.168.0.14,54321)
+  (1,192.168.0.13,54321)
   ------------------------
 
   Open H2O Flow in browser: http://192.168.0.12:54321 (CMD + click in Mac OSX)
@@ -447,8 +459,9 @@ Sparkling Water Context:
 
 As with the Sparkling Shell, it is possible to inspect the Spark cluster status by accessing the cluster UI (in `http://cluster-master:8080/`):
 
-![Spark Standalone Cluster UI with H2O and Pysparkling](./images/spark-standalone-pysparkling.PNG)
+![Spark Standalone Cluster UI with H2O and Pysparkling](./images/spark-standalone-pysparkling-192.PNG)
 
+The Spark context UI shows a similar layout to that of the Sparkling Shell.
 
 ## H2O applications run as Jupyter notebooks
 Jupyter can be used to run Pyspark applications as notebooks. It is possible to use it to run Pysparkling applications as well.
@@ -471,7 +484,7 @@ As a result, `~/.jupyter/jupyter_notebook_config.py` is created. Some settings i
 The folder that hosts notebooks and kernels is created and proper permissions assigned:
 ```bash
 sudo mkdir /srv/notebooks
-sudo chown ecemaml:ecemaml ./notebooks/
+sudo chown <working user id>:<working user id> ./notebooks/
 ```
 
 Next, the Jupyter Notebook configuration file, `~/.jupyter/jupyter_notebook_config.py`, is updated to use the just created folder, by activating the `c.NotebookApp.notebook_dir` setting:
@@ -500,7 +513,7 @@ If using `my_password` as password:
 sed -i "s/#c.NotebookApp.password = ''/c.NotebookApp.password = 'my_password'/" ~/.jupyter/jupyter_notebook_config.py
 ```
 
-### Configuration for running Pysparkling notebooks
+### Configuration for running notebooks
 The configuration described in the section above just enables an open access to the server. However, it is necessary to trigger the access to the Notebook server when Pysparkling is run. It is done by updating the `spark-env.sh` configuration file on the master instance:
 
 ```bash
